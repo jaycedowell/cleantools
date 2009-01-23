@@ -1,0 +1,15 @@
+linkimage,'build_beam_worker','/home/jddowell/IDL/idl_alfa/clean_tools.so',1,'build_beam_worker',max_args=6,min_args=6
+linkimage,'alfa_clean_worker','/home/jddowell/IDL/idl_alfa/clean_tools.so',1,'alfa_clean_worker',max_args=13,min_args=13
+linkimage,'lib_version','/home/jddowell/IDL/idl_alfa/clean_tools.so',1,'lib_version',max_args=1,min_args=0
+
+.comp build_beam5
+.comp build_beam_grid2
+.comp alfa_clean7
+
+.comp robust_sigma
+.comp gridview2
+.comp cleanview4
+.comp beamview2
+.comp fieldview
+.comp cleanflux2
+
