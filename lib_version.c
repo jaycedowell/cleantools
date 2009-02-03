@@ -7,7 +7,7 @@ IDL_VPTR lib_version(int argc, IDL_VPTR argv[]) {
 /* Declare variables from IDL */
 IDL_VPTR vers;				// Strings
 
-vers = IDL_StrToSTRING("clean tools 20080730\0");
+vers = IDL_StrToSTRING("clean tools 20090203\0");
 
 return(vers);
 
