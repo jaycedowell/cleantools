@@ -1787,17 +1787,17 @@ end
 ;-------------------------------------------------------------------------------
 pro cleanflux_setcoeff, coefra, coefdec
 
-common galflux_state
-common gridstate
+common cleanflux_state
+common gridstate_clean
 
 
 ;Current as of September 9, 2008
 
 ;UNITS in second of arc
 ;Correction coefficients for 3rd order poly for +5 to +16 declination range
-;if (gfstate.cen_ell_dec[0] gt 7.8 AND gfstate.cen_ell_dec[0] lt 16.5) then begin
-if (gfstate.cen_ell_dec[0] gt 3.5 AND gfstate.cen_ell_dec[0] lt 16.5 AND $
-    gfstate.cen_ell_ra[0]  le 17.0 AND gfstate.cen_ell_ra[0] ge 5.5 ) then begin
+;if (fluxstate.cen_ell_dec[0] gt 7.8 AND fluxstate.cen_ell_dec[0] lt 16.5) then begin
+if (fluxstate.cen_ell_dec[0] gt 3.5 AND fluxstate.cen_ell_dec[0] lt 16.5 AND $
+    fluxstate.cen_ell_ra[0]  le 17.0 AND fluxstate.cen_ell_ra[0] ge 5.5 ) then begin
 
          coefra=[11.071615D,      -2.0179680D,      0.12670865D,   -0.0052052522D]
         coefdec=[-9.3129978D,       6.0345242D,     -0.69725590D,     0.026112862D]
@@ -1806,8 +1806,8 @@ if (gfstate.cen_ell_dec[0] gt 3.5 AND gfstate.cen_ell_dec[0] lt 16.5 AND $
 endif
 
 ;Correction coefficients for 3rd order poly for +27 declination range of Spring Sky
-if (gfstate.cen_ell_dec[0] gt 25.3 AND gfstate.cen_ell_dec[0] lt 28.6 AND $
-    gfstate.cen_ell_ra[0] le 17.0 AND gfstate.cen_ell_ra[0] ge 5.5) then begin
+if (fluxstate.cen_ell_dec[0] gt 25.3 AND fluxstate.cen_ell_dec[0] lt 28.6 AND $
+    fluxstate.cen_ell_ra[0] le 17.0 AND fluxstate.cen_ell_ra[0] ge 5.5) then begin
 
          coefra=[ 4698.7972D,   -601.16113D,   25.063258D,     -0.34318503D]
         coefdec=[ 66725.520D,  -7463.3766D,  278.11589D,      -3.4530198D]
@@ -1817,8 +1817,8 @@ endif
 
 ;Correction coefficients for 3rd order poly for +24 to +32 declination
 ;range of the Fall Sky
-if ( gfstate.cen_ell_dec[0] gt 23.5 AND gfstate.cen_ell_dec[0] lt 32.5 AND $
-    (gfstate.cen_ell_ra[0] lt 5.0 OR gfstate.cen_ell_ra[0] ge 20.0)) then begin
+if ( fluxstate.cen_ell_dec[0] gt 23.5 AND fluxstate.cen_ell_dec[0] lt 32.5 AND $
+    (fluxstate.cen_ell_ra[0] lt 5.0 OR fluxstate.cen_ell_ra[0] ge 20.0)) then begin
 
          coefra=[-5437.0693D,       583.40057D,      -20.849189D,      0.24723620]
         coefdec=[  948.77285D,      -107.93506D,       4.0712927D,    -0.050868007D]
@@ -1827,8 +1827,8 @@ if ( gfstate.cen_ell_dec[0] gt 23.5 AND gfstate.cen_ell_dec[0] lt 32.5 AND $
     endif
 
 ;Correction for regions South fo zenith in the Fall sky
-if ( gfstate.cen_ell_dec[0] gt 13.5 AND gfstate.cen_ell_dec[0] lt 16.5 AND $
-    (gfstate.cen_ell_ra[0] lt 5.0 OR gfstate.cen_ell_ra[0] ge 20.0)) then begin
+if ( fluxstate.cen_ell_dec[0] gt 13.5 AND fluxstate.cen_ell_dec[0] lt 16.5 AND $
+    (fluxstate.cen_ell_ra[0] lt 5.0 OR fluxstate.cen_ell_ra[0] ge 20.0)) then begin
 
     ;print, 'New correction for Southern Fall sky'
 
