@@ -23,7 +23,7 @@
 ;       upper chan marker, upper peak marker).  Linear fits are made
 ;       to the "sides" of the galaxy profile.  The user can click the
 ;       marks in the plot to fine tune the fits.  In addtion, the AGC
-;       and Digital HI Archive (Sprinob, et al. 2005) are shown, and
+;       and Digital HI Archive (Springob, et al. 2005) are shown, and
 ;       the user can compare the FWHM fit from the data with available
 ;       spectra in the Archive.  Saving the files in a SOURCE structure
 ;       and postscript output are also allowed. 
@@ -112,6 +112,17 @@
 ;                                         pointing correciton, as well
 ;                                         as the orgininal display
 ;                                         from the AGC catalog.
+;
+;       Feb 10,2007      B.K -  repaired for NaN problem in peaks
+;                                fitting routine
+;
+;       Jan 17,2008      B.K.-  fixed zero-hour crossing coordinates
+;                              for ellipse fit positions
+;
+;
+;
+;       May 6,2008       B.K - extended pointing correction to 32.5
+;                              degrees declination.
 ;
 ;
 ;----------------------------------------------------------
@@ -1772,6 +1783,68 @@ endcase  ;End of event handler case statement
 end
 
 ;-------------------------------------------------------------------------------
+;-------------------------------------------------------------------------------
+;-------------------------------------------------------------------------------
+pro cleanflux_setcoeff, coefra, coefdec
+
+common galflux_state
+common gridstate
+
+
+;Current as of September 9, 2008
+
+;UNITS in second of arc
+;Correction coefficients for 3rd order poly for +5 to +16 declination range
+;if (gfstate.cen_ell_dec[0] gt 7.8 AND gfstate.cen_ell_dec[0] lt 16.5) then begin
+if (gfstate.cen_ell_dec[0] gt 3.5 AND gfstate.cen_ell_dec[0] lt 16.5 AND $
+    gfstate.cen_ell_ra[0]  le 17.0 AND gfstate.cen_ell_ra[0] ge 5.5 ) then begin
+
+         coefra=[11.071615D,      -2.0179680D,      0.12670865D,   -0.0052052522D]
+        coefdec=[-9.3129978D,       6.0345242D,     -0.69725590D,     0.026112862D]
+
+
+endif
+
+;Correction coefficients for 3rd order poly for +27 declination range of Spring Sky
+if (gfstate.cen_ell_dec[0] gt 25.3 AND gfstate.cen_ell_dec[0] lt 28.6 AND $
+    gfstate.cen_ell_ra[0] le 17.0 AND gfstate.cen_ell_ra[0] ge 5.5) then begin
+
+         coefra=[ 4698.7972D,   -601.16113D,   25.063258D,     -0.34318503D]
+        coefdec=[ 66725.520D,  -7463.3766D,  278.11589D,      -3.4530198D]
+
+endif
+
+
+;Correction coefficients for 3rd order poly for +24 to +32 declination
+;range of the Fall Sky
+if ( gfstate.cen_ell_dec[0] gt 23.5 AND gfstate.cen_ell_dec[0] lt 32.5 AND $
+    (gfstate.cen_ell_ra[0] lt 5.0 OR gfstate.cen_ell_ra[0] ge 20.0)) then begin
+
+         coefra=[-5437.0693D,       583.40057D,      -20.849189D,      0.24723620]
+        coefdec=[  948.77285D,      -107.93506D,       4.0712927D,    -0.050868007D]
+
+
+    endif
+
+;Correction for regions South fo zenith in the Fall sky
+if ( gfstate.cen_ell_dec[0] gt 13.5 AND gfstate.cen_ell_dec[0] lt 16.5 AND $
+    (gfstate.cen_ell_ra[0] lt 5.0 OR gfstate.cen_ell_ra[0] ge 20.0)) then begin
+
+    ;print, 'New correction for Southern Fall sky'
+
+      coefra=[-80813.586D,       15982.569D,      -1052.3137D,       23.064585D]
+     coefdec=[ 55192.920D,      -10897.419D,       716.33148D,      -15.672597D]
+
+
+endif
+
+end
+;------------------------------------------------------------------------------
+;------------------------------------------------------------------------------
+;------------------------------------------------------------------------------
+
+
+;-------------------------------------------------------------------------------
 ;Controls which isophote is currently selected
 pro cleanflux_spectralist, event
 
@@ -1875,34 +1948,13 @@ endif
 
 
 ;Pointing correction
-;Added by B. Kent, December 21, 2006  
+;Feature added by B. Kent, December 21, 2006  
 
 coefra=[0.0D,0.0D,0.0D,0.0D]
 coefdec=coefra
 fluxstate.correction=0   ;for messaging - zero if no correction, 1 if there is a correction
 
-;Current as of January 6, 2007
-
-;UNITS in second of arc
-;Correction coefficients for 3rd order poly for +8 to +16 declination range
-;if (fluxstate.cen_ell_dec[0] gt 7.8 AND fluxstate.cen_ell_dec[0] lt 16.5) then begin
-if (fluxstate.cen_ell_dec[0] gt 5.5 AND fluxstate.cen_ell_dec[0] lt 16.5) then begin
-coefra=[41.923654D,      -11.418516D,       1.0330777D,    -0.033012818D]
-coefdec=[2.2932564D,       2.1329762D,     -0.28803773D,     0.012773822D]
-
-
-;coefra=[56.608498D,      -15.295846D,       1.3616687D,    -0.042068705D]
-;coefdec=[ -53.364512D,       16.971647D,      -1.5659715D,     0.048449057D]
-;fluxstate.correction=1
-endif
-
-
-;Correction coefficients for 3rd order poly for +24 to +28 declination range
-if (fluxstate.cen_ell_dec[0] gt 23.5 AND fluxstate.cen_ell_dec[0] lt 28.5) then begin
-coefra=[  -33386.257D,       3837.6595D,      -146.93808D,       1.8728661D]
-coefdec=[   23056.414D,      -2666.3824D,       102.67591D,      -1.3165387D]
-;fluxstate.correction=1
-endif
+cleanflux_setcoeff, coefra, coefdec
 
 
 correction_dec_deg=dblarr(fluxstate.numisolevels+1)
@@ -2337,9 +2389,17 @@ xyouts, 15,280,'Map max flux= '+strtrim(string(fluxstate.fmax, format=' (f10.2)'
   fluxstate.cont[i]=total(fluxstate.cbox[xind,yind]*shifted_beam[xind,yind])/total(shifted_beam[xind,yind])
   fluxstate.cen_ra[i]=total(fluxstate.rabox_continue[xind,yind]*fluxstate.totf[xind,yind])/total(fluxstate.totf[xind,yind])
   fluxstate.cen_dec[i]=total(fluxstate.decbox[xind,yind]*fluxstate.totf[xind,yind])/total(fluxstate.totf[xind,yind])
+
   fl=floor(center[0])
   df=center[0]-fl
-  fluxstate.cen_ell_ra[i]=fluxstate.rabox[fl]+df*(fluxstate.rabox[fl+1]-fluxstate.rabox[fl])
+  boxdiff=fluxstate.rabox[fl+1]-fluxstate.rabox[fl]
+   if (boxdiff ge 24.0) then boxdiff=boxdiff-24.0
+   if (boxdiff lt 0.0) then boxdiff=boxdiff+24.0
+  fluxstate.cen_ell_ra[i]=fluxstate.rabox[fl]+df*(boxdiff)
+
+  if (fluxstate.cen_ell_ra[i] ge 24.0) then fluxstate.cen_ell_ra[i]=fluxstate.cen_ell_ra[i]-24.0
+  if (fluxstate.cen_ell_ra[i] lt 0.0) then fluxstate.cen_ell_ra[i]=fluxstate.cen_ell_ra[i]+24.0
+
   fl=floor(center[1])
   df=center[1]-fl
   fluxstate.cen_ell_dec[i]=fluxstate.decbox[fl]+df*(fluxstate.decbox[fl+1]-fluxstate.decbox[fl])
@@ -3167,6 +3227,14 @@ if (vch20 lt 0.0) then vch20=0.0
 if (vch50 gt n_elements(velarr)-1) then vch50=n_elements(velarr)-2
 if (vch50 lt 0.0) then vch50=0.0
 
+;Check for NaNs
+ checkindex=where(finite(vch50) eq 0)
+    if (checkindex ne -1) then vch50=0
+ checkindex=where(finite(vch20) eq 0)
+    if (checkindex ne -1) then vch20=0
+
+;print, 'BKcheck'
+
 dv=abs(velarr[vch50]-velarr[vch50+1])
 v50=velarr[vch50]-(vch50-floor(vch50))*dv
 v20=velarr[vch20]-(vch20-floor(vch20))*dv
@@ -3219,6 +3287,14 @@ if ((ch1_base ge ch2_base) OR (ch1_base lt 0) OR (ch2_base ge nchn-1)) then begi
   ch1_base=ind1
   ch2_base=ind4
 endif
+
+;Check for NaNs
+ checkindex=where(finite(ch1_50) eq 0)
+    if (checkindex ne -1) then ch1_50=0
+ checkindex=where(finite(ch2_50) eq 0)
+    if (checkindex ne -1) then ch2_50=0
+
+
 meanSbase=mean(spec[ch1_50:ch2_50])   ; mean value over significant signal
 totSerr=rms*dv*sqrt(ch2-ch1)
 smofac=W50/(2.*10.)  	; assumes resolution is 10 km/s, after han
@@ -3470,6 +3546,9 @@ endif
 
 ;Display the returned parameters in the text display
 
+     ;print, gfstate.cen_ell_ra[gfstate.currentlistval], gfstate.cen_ell_dec[gfstate.currentlistval]
+     ;print, radec_to_name(gfstate.cen_ell_ra[gfstate.currentlistval],gfstate.cen_ell_dec[gfstate.currentlistval])
+
      name1=radec_to_name(fluxstate.cen_ra[fluxstate.currentlistval],fluxstate.cen_dec[fluxstate.currentlistval])
      name2=radec_to_name(fluxstate.cen_ell_ra[fluxstate.currentlistval],fluxstate.cen_ell_dec[fluxstate.currentlistval])
      fluxstate.name[fluxstate.currentlistval]=name2
@@ -3653,27 +3732,11 @@ coefra=[0.0D,0.0D,0.0D,0.0D]
 coefdec=coefra
 fluxstate.correction=0   ;for messaging - zero if no correction, 1 if there is a correction
 
-;Current as of January 6, 2007
+;Current as of July 25, 2008
 
-;UNITS in second of arc
-;Correction coefficients for 3rd order poly for +8 to +16 declination range
-;if (fluxstate.cen_ell_dec[0] gt 7.8 AND fluxstate.cen_ell_dec[0] lt 16.5) then begin
-;coefra=[56.608498D,      -15.295846D,       1.3616687D,    -0.042068705D]
-;coefdec=[ -53.364512D,       16.971647D,      -1.5659715D,     0.048449057D]
-if (fluxstate.cen_ell_dec[0] gt 5.5 AND fluxstate.cen_ell_dec[0] lt 16.5) then begin
-coefra=[41.923654D,      -11.418516D,       1.0330777D,    -0.033012818D]
-coefdec=[2.2932564D,       2.1329762D,     -0.28803773D,     0.012773822D]
+cleanflux_setcoeff, coefra, coefdec
 
 fluxstate.correction=1
-endif
-
-
-;Correction coefficients for 3rd order poly for +24 to +28 declination range
-if (fluxstate.cen_ell_dec[0] gt 23.5 AND fluxstate.cen_ell_dec[0] lt 28.5) then begin
-coefra=[  -33386.257D,       3837.6595D,      -146.93808D,       1.8728661D]
-coefdec=[   23056.414D,      -2666.3824D,       102.67591D,      -1.3165387D]
-fluxstate.correction=1
-endif
 
 
 correction_dec_deg=dblarr(fluxstate.numisolevels+1)
@@ -4890,6 +4953,7 @@ case (fluxstate.currentcode) of
 2:codeout='(2) Prior (Opt cz available)'
 3:codeout='(3) Marginal'
 4:codeout='(4) Marginal (possible OC)'
+5:codeout='(5) Prior minus'
 9:codeout='(9) HVC candidate'
 else: codeout='Error'
 
@@ -5139,27 +5203,7 @@ coefra=[0.0D,0.0D,0.0D,0.0D]
 coefdec=coefra
 fluxstate.correction=0   ;for messaging - zero if no correction, 1 if there is a correction
 
-;Current as of January 6, 2007
-
-;UNITS in second of arc
-;Correction coefficients for 3rd order poly for +8 to +16 declination range
-;if (fluxstate.cen_ell_dec[0] gt 7.8 AND fluxstate.cen_ell_dec[0] lt 16.5) then begin
-;coefra=[56.608498D,      -15.295846D,       1.3616687D,    -0.042068705D]
-;coefdec=[ -53.364512D,       16.971647D,      -1.5659715D,     0.048449057D]
-if (fluxstate.cen_ell_dec[0] gt 5.5 AND fluxstate.cen_ell_dec[0] lt 16.5) then begin
-coefra=[41.923654D,      -11.418516D,       1.0330777D,    -0.033012818D]
-coefdec=[2.2932564D,       2.1329762D,     -0.28803773D,     0.012773822D]
-
-;fluxstate.correction=1
-endif
-
-
-;Correction coefficients for 3rd order poly for +24 to +28 declination range
-if (fluxstate.cen_ell_dec[0] gt 23.5 AND fluxstate.cen_ell_dec[0] lt 28.5) then begin
-coefra=[  -33386.257D,       3837.6595D,      -146.93808D,       1.8728661D]
-coefdec=[   23056.414D,      -2666.3824D,       102.67591D,      -1.3165387D]
-;fluxstate.correction=1
-endif
+cleanflux_setcoeff, coefra, coefdec
 
 
 correction_dec_deg=dblarr(fluxstate.numisolevels+1)
@@ -5439,8 +5483,9 @@ case uvalue of
                  rastring=strmid(tempstring, 0, pluspos[0])
                  decstring=strmid(tempstring, pluspos[0])
 
-                 fluxstate.RA_opt=hms1_hr(rastring)
-                 fluxstate.Dec_opt=dms1_deg(decstring)
+
+                 fluxstate.RA_opt=hms1_hr(double(rastring))
+                 fluxstate.Dec_opt=dms1_deg(double(decstring))
 
                  ;print, rastring, '  ',fluxstate.RA_opt
                  ;print, decstring,'  ',fluxstate.Dec_opt
@@ -5676,12 +5721,13 @@ T=systime(1)
 common cleanflux_state, fluxstate
 common clean
 
-; print, ''
-; print, 'Initializing GalFLUX v3.0. pointing correction applied for 5.5 < dec < 16.5 AND 23.5 < dec < 28.5.'
-; print, ''
+print, ''
+print, 'Initializing GalFLUX v3.0. Pointing corrections updated Sept. 9, 2008.'
+print, ''
 
 nsx=urx-llx+1
 nsy=ury-lly+1
+
 
 ; Get spectral, continuum data and respective weights
 
@@ -6020,6 +6066,7 @@ fluxstate={baseID:0L, $         ;ID of base widget
          buttonprior:0L, $
          buttonmarginal:0L, $
          buttonlowsnr:0L, $
+	 buttoncode5:0L, $
          buttonhvc:0L, $
          currentcode:0, $
          rabox_continue:rabox_continue, $
@@ -6144,12 +6191,13 @@ rangebase=widget_base(rightbase, xsize=480, ysize=30, /row, /frame)
    button=widget_button(rangebase, xsize=60, ysize=25, value=' Rescale ', uvalue='rescale')
 
 qualitybase=widget_base(rightbase, xsize=485, ysize=30, /row, /frame, /exclusive)
-        fluxstate.buttonnostatus=widget_button(qualitybase, value='(0)No stat  ', uvalue='0', event_pro='cleanflux_codes')
-        fluxstate.buttondetection=widget_button(qualitybase, value='(1)Det  ', uvalue='1', event_pro='cleanflux_codes')
-        fluxstate.buttonprior=widget_button(qualitybase,     value='(2)Prior  ', uvalue='2', event_pro='cleanflux_codes')
-        fluxstate.buttonmarginal=widget_button(qualitybase, value='(3)Marg  ',  uvalue='3', event_pro='cleanflux_codes')
-        fluxstate.buttonlowsnr=widget_button(qualitybase,   value='(4)Marg+  ', uvalue='4', event_pro='cleanflux_codes')
-        fluxstate.buttonhvc=widget_button(qualitybase,   value='(9)HVC', uvalue='9', event_pro='cleanflux_codes')
+	fluxstate.buttonnostatus=widget_button(qualitybase, value='0 ', uvalue='0', event_pro='cleanflux_codes')
+        fluxstate.buttondetection=widget_button(qualitybase, value='1:Det ', uvalue='1', event_pro='cleanflux_codes')
+        fluxstate.buttonprior=widget_button(qualitybase,     value='2:Prior ', uvalue='2', event_pro='cleanflux_codes')
+        fluxstate.buttonmarginal=widget_button(qualitybase, value='3:Marg ',  uvalue='3', event_pro='cleanflux_codes')
+        fluxstate.buttonlowsnr=widget_button(qualitybase,   value='4:Marg+ ', uvalue='4', event_pro='cleanflux_codes')
+        fluxstate.buttoncode5=widget_button(qualitybase,   value='5:Prior- ', uvalue='5', event_pro='cleanflux_codes')
+        fluxstate.buttonhvc=widget_button(qualitybase,   value='9:HVC', uvalue='9', event_pro='cleanflux_codes')
 
 widget_control, fluxstate.buttonnostatus, set_button=1
 
