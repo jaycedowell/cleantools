@@ -4156,7 +4156,49 @@ ver, decmin, decmax
         map=total(map,1)/2.
         map=reverse(congrid(reform(map), xsize,ysize))
 
-     
+;List of cuts made to get the subgrid structure
+;d[lowerchan:upperchan,*,state.xcubemin:state.xcubemax, state.ycubemin:state.ycubemax]
+;w[lowerchan:upperchan,*,state.xcubemin:state.xcubemax, state.ycubemin:state.ycubemax]
+;cont[*,state.xcubemin:state.xcubemax, state.ycubemin:state.ycubemax]
+;cw[*,state.xcubemin:state.xcubemax, state.ycubemin:state.ycubemax]
+;;;;;;;;;;velarr[lowerchan:upperchan]
+;;;;;;nx=state.xcubemax-state.xcubemin+1
+;;;;;;ny=state.ycubemax-state.ycubemin+1
+;;;;;;;;czmin=min(grid.velarr[lowerchan:upperchan])
+;;;;;;;;;nz=n_elements(grid.velarr[lowerchan:upperchan])
+;;;;ramin=(state.xcubemin*grid.deltara)/60.0+grid.ramin
+;;;;;;decmin=(state.ycubemin*grid.deltadec)/60.0+grid.decmin
+
+subgrid={name:grid.name, $
+      RAmin:(state.xcubemin*grid.deltara)/3600.0+grid.ramin, $
+      Decmin:(state.ycubemin*grid.deltadec)/60.0+grid.decmin, $
+      Epoch:grid.epoch, $
+      DeltaRA:grid.deltara, $
+      DeltaDec:grid.deltadec, $
+      NX:state.xcubemax-state.xcubemin+1, NY:state.ycubemax-state.ycubemin+1, $
+      map_projection:grid.map_projection, $
+      czmin:min(grid.velarr[lowerchan:upperchan]), $
+      NZ:n_elements(grid.velarr[lowerchan:upperchan]), $
+      velarr:grid.velarr[lowerchan:upperchan], $
+      wf_type:grid.wf_type, $
+      wf_fwhm:grid.wf_fwhm, $
+      han:grid.han, $
+      medsubtract:grid.medsubtract, $
+      baseline:grid.baseline, $
+      calib_facs:grid.calib_facs, $
+      grms:grid.grms, $
+      date:systime(0), $
+      who:grid.who, $
+      pos:grid.pos, $
+      drift_list:grid.drift_list, $
+      grid_makeup:grid.grid_makeup, $
+      d:grid.d[lowerchan:upperchan,*,state.xcubemin:state.xcubemax, state.ycubemin:state.ycubemax], $
+      w:grid.w[lowerchan:upperchan,*,state.xcubemin:state.xcubemax, state.ycubemin:state.ycubemax], $
+      cont:grid.cont[*,state.xcubemin:state.xcubemax, state.ycubemin:state.ycubemax], $
+      cw:grid.cw[*,state.xcubemin:state.xcubemax, state.ycubemin:state.ycubemax]} 
+
+save, subgrid, filename='subgrid.sav'
+delvarx, subgrid
 
 ;Fetch the smoothing state
 widget_control, state.smoothslider, get_value=smoothval
@@ -4244,7 +4286,7 @@ jpeg_outputtitle = strcompress('GRIDview2 JPEG Output')
        numstepsbase=widget_base(configbase, /row)
           state.exportnumsteps=widget_text(numstepsbase, xsize=8, value='5', $
                                       /editable, uvalue='exportnumsteps')
-          label=widget_label(numstepsbase, value='# of steps')
+          label=widget_label(numstepsbase, value='# of chans')
 
           cd, current=pwd  ;Get current working directory into a string
 
@@ -4469,6 +4511,11 @@ dec=grid.decmin+(dindgen(n_elements(grid.d[0,0,0,*]))+0.5)*grid.deltadec/(60.) ;
       ymin=ymax-(2*pixelrange)    
   endif
 
+; xmin=xcenter-pixelrange
+; ymin=ycenter-pixelrange
+;Redefine xcenter and ycenter after possible shift
+xcenter=xmin+pixelrange
+ycenter=ymin+pixelrange
 
 
 ;Make the map
@@ -4490,12 +4537,16 @@ ramax=max(rahr)+0.5*(deltaram/60.0)
 decmin=min(decdeg)-0.5/60.0
 decmax=max(decdeg)+0.5/60.0
 
+rahr_opt=(ramax+ramin)/2.0
+decdeg_opt=(decmax+decmin)/2.0
+
 ;If chosen by the user, then download a DSS image
 if (state.ps_checkbox eq 1) then begin
 
   widget_control, state.baseID, hourglass=1
   print, 'Please wait.  Obtaining optical image from service...' 
-  querydss, [rah[xcenter]*15.0, dec[ycenter]], optimage, header, imsize=(decmax-decmin)*60.0, survey='2b'
+  ;querydss, [rah[xcenter]*15.0, dec[ycenter]], optimage, header, imsize=(decmax-decmin)*60.0, survey='2b'
+  querydss, [rahr_opt*15.0, decdeg_opt], optimage, header, imsize=(decmax-decmin)*60.0, survey='2b'
   widget_control, state.baseID, hourglass=0
 
 endif
