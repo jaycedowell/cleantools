@@ -139,14 +139,14 @@ if n_elements(MapSize) EQ 0 then begin
 endif
 if n_elements(AntPat) EQ 0 then begin
 	case MapSize of 
-		21:	restore,agcdir+'a1963_21_180.sav'
-		25:	restore,agcdir+'a1963_25_180.sav'
-		31:	restore,agcdir+'a1963_31_180.sav'
-		35:	restore,agcdir+'a1963_35_180.sav'
-		41:	restore,agcdir+'a1963_41_180.sav'
-		45:	restore,agcdir+'a1963_45_180.sav'
-		51:	restore,agcdir+'a1963_51_180.sav'
-		else:	restore,agcdir+'a1963_25_180.sav'
+		21:	restore,agcdir+'../deconvolution/beams/a1963_21_180.sav'
+		25:	restore,agcdir+'../deconvolution/beams/a1963_25_180.sav'
+		31:	restore,agcdir+'../deconvolution/beams/a1963_31_180.sav'
+		35:	restore,agcdir+'../deconvolution/beams/a1963_35_180.sav'
+		41:	restore,agcdir+'../deconvolution/beams/a1963_41_180.sav'
+		45:	restore,agcdir+'../deconvolution/beams/a1963_45_180.sav'
+		51:	restore,agcdir+'../deconvolution/beams/a1963_51_180.sav'
+		else:	restore,agcdir+'../deconvolution/beams/a1963_25_180.sav'
 	endcase
 
 	AntPat = ant_pat
