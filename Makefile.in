@@ -1,7 +1,8 @@
-# $ID: build_beam, v1.0 2008/07/24 Exp $
+# $ID: @PACKAGE_NAME@ v@PACKAGE_VERSION@ (@PACKAGE_DATE@) Exp $
+CC = @CC@
 
-CFLAGS= -c -O3 -fPIC -m64 -D_REENTRANT -I/usr/local/itt/idl/external/include/
-LDFLAGS= -shared -lm
+CFLAGS= @CFLAGS@ -c -O3 -fPIC -m64 -D_REENTRANT @OPENMP_CFLAGS@ -I@IDL_HEADER@
+LDFLAGS=@LDFLAGS@ -shared -lm @OPENMP_CFLAGS@
 SRCS=build_beam.c alfa_clean.c lib_version.c
 OBJS=build_beam.o alfa_clean.o lib_version.o
 
