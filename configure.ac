@@ -112,7 +112,8 @@ AC_CACHE_VAL(ac_cv_pheader_$1,
     else
       CPPFLAGS="-I$ac_dir $save_CPPFLAGS"
     fi
-    AC_TRY_COMPILE([#include <stdio.h> #include <$2>],,ac_found=1;ac_cv_pheader_$1="$ac_dir";break)
+    AC_TRY_COMPILE([#include <stdio.h> #include <math.h>
+		    #include "$2"],[IDL_VPTR drift_dec;],ac_found=1;ac_cv_pheader_$1="$ac_dir";break)
   done
   CPPFLAGS="$save_CPPFLAGS"
   ifelse([$3],,,[if test -z "$ac_found"
@@ -144,8 +145,8 @@ AC_SUBST(PACKAGE_DATE)
 AC_MSG_NOTICE(configuring clean tools v$PACKAGE_VERSION; released $PACKAGE_DATE)
 
 # Checks for programs.
-AC_PROG_CC
-if test $GCC = yes; then
+AC_PROG_CC([icc gcc])
+if test $CC = gcc; then
   AC_MSG_CHECKING([whether gcc version is >= 4.3])
   AC_COMPILE_IFELSE(AC_LANG_PROGRAM([[
 	#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 3)
@@ -179,7 +180,7 @@ AC_CHECK_HEADERS([stdio.h math.h string.h])
 AC_ARG_WITH([idl-inc],
         AS_HELP_STRING([--with-idl-inc=PATH], [specify the location of the IDL include directory]),
         [
-	 AC_PATH_HEADER([IDL_HEADER], idl_export.h, 
+	 AC_PATH_HEADER([IDL_HEADER], [idl_export.h], 
 		[AC_MSG_ERROR([cannot find idl_export.h; try --with-idl-inc=PATH])], 
 		["$withval":"/usr/local/itt/idl/external/include":"/usr/local/rsi/idl/external/include"])], 
 	[
