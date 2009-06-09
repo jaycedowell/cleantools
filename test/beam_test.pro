@@ -41,6 +41,5 @@ if abs(max(beamd)) GT 1.0d-9 OR abs(min(beamd)) GT 1.0d-9 then begin
 endif else begin
 	Pass = Pass + 1
 endelse
-asdfdf
 
 end

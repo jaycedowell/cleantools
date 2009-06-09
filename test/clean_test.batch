@@ -33,7 +33,7 @@ comp_test, 'alfa_clean7', Pass=Pass
   test_pass = test_pass+Pass
 
 ; Beam Building Test
-restore, 'grid_test.sav'
+restore, 'test/grid_test.sav'
 beam_test, grid, Pass=Pass
   test_pass = test_pass+Pass
 
