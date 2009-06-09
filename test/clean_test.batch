@@ -13,7 +13,7 @@ comp_test, 'beam_test'
 ; Test Counters
 test_pass = 0
 test_fail = 0
-test_totl = 9
+test_totl = 15
 
 ; Tests for linking IDL routine names with the C module
 link_file = agcdir+'../deconvolution/clean_tools.so'
@@ -25,11 +25,25 @@ linK_test, link_file, 'lib_version', 1, 0, Pass=Pass
   test_pass = test_pass+Pass
 
 ; Compile tests for the supporting IDL PROs
+;+ Backend 
 comp_test, 'build_beam5', Pass=Pass
   test_pass = test_pass+Pass
 comp_test, 'build_beam_grid2', Pass=Pass
   test_pass = test_pass+Pass
 comp_test, 'alfa_clean7', Pass=Pass
+  test_pass = test_pass+Pass
+comp_test, 'robust_sigma', Pass=Pass
+  test_pass = test_pass+Pass
+;+ Frontend
+comp_test, 'gridview2', Pass=Pass
+  test_pass = test_pass+Pass
+comp_test, 'cleanview', Pass=Pass
+  test_pass = test_pass+Pass
+comp_test, 'beamview', Pass=Pass
+  test_pass = test_pass+Pass
+comp_test, 'fieldview', Pass=Pass
+  test_pass = test_pass+Pass
+comp_test, 'cleanflux', Pass=Pass
   test_pass = test_pass+Pass
 
 ; Beam Building Test
@@ -44,8 +58,8 @@ print,'Used '+string(t_stop-t_start, Format='(F0.2)')+' seconds'
 print,'--'
 
 test_fail = test_totl - test_pass
-print,'Tests Passed: '+strtrim(string(test_pass),2)+' of '+strtrim(string(test_totl),2)+ $
+print,'Tests Passed: '+string(test_pass, Format='(I2)')+' of '+strtrim(string(test_totl),2)+ $
 	' ('+string(100.0*test_pass/test_totl, Format='(F5.1)')+'%)'
-print,'Tests Failed: '+strtrim(string(test_fail),2)+' of '+strtrim(string(test_totl),2)+ $
+print,'Tests Failed: '+string(test_fail, Format='(I2)')+' of '+strtrim(string(test_totl),2)+ $
 	' ('+string(100.0*test_fail/test_totl, Format='(F5.1)')+'%)'
 print,'--'

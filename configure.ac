@@ -134,7 +134,7 @@ AC_SUBST($1)
 }])
 
 
-AC_INIT(cleantools, 1.0.2, jdowell@astro.indiana.edu)
+AC_INIT(cleantools, 1.0.3, jdowell@astro.indiana.edu)
 AC_CONFIG_SRCDIR([lib_version.c])
 #AC_CONFIG_HEADER([config.h])
 

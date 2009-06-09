@@ -17,7 +17,7 @@ clean_tools.so: $(OBJS)
 # Test
 .PHONY : test
 test:
-	-idl -e '@clean_test.batch' || exit $$?;
+	idl -e '@clean_test.batch' || exit $$?;
 
 # Clean up
 .PHONY : clean

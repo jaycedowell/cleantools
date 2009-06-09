@@ -14,8 +14,8 @@ linkimage,'lib_version', $
 
 .comp robust_sigma
 .comp gridview2
-.comp cleanview4
-.comp beamview2
+.comp cleanview
+.comp beamview
 .comp fieldview
-.comp cleanflux2
+.comp cleanflux
 

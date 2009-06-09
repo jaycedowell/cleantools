@@ -7,7 +7,7 @@ Catch, Error_status
 if Error_status NE 0 then begin
 	print,'Error '+strtrim(string(Error_status),2)+': '+!Error_State.Msg
 	if NOT Keyword_Set(NoExit) then $
-		exit, status=255
+		exit, status=abs(Error_status)
 endif
 
 build_beam5, grid, [72,72], beam1, MapSize=25, /Silent
