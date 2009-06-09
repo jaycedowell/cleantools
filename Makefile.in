@@ -14,6 +14,12 @@ $(SRCS):
 clean_tools.so: $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $(OBJS)
 
+# Test
+.PHONY : test
+test:
+	-idl -e '@clean_test.batch' || exit $$?;
+
 # Clean up
+.PHONY : clean
 clean:
 	-rm -f clean_tools.so *.o

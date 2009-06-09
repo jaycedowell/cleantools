@@ -1,0 +1,51 @@
+; Start timer
+t_start = systime(1)
+
+; Startup batch files to define the ALFALFA routines
+@wasinit2
+@alfinit
+
+; PROs used for testing and reporting errors
+.comp comp_test
+comp_test, 'link_test'
+comp_test, 'beam_test'
+
+; Test Counters
+test_pass = 0
+test_fail = 0
+test_totl = 9
+
+; Tests for linking IDL routine names with the C module
+link_file = agcdir+'../deconvolution/clean_tools.so'
+link_test, link_file, 'build_beam_worker', 6, 6, Pass=Pass
+  test_pass = test_pass+Pass
+linK_test, link_file, 'alfa_clean_worker', 13, 13, Pass=Pass
+  test_pass = test_pass+Pass
+linK_test, link_file, 'lib_version', 1, 0, Pass=Pass
+  test_pass = test_pass+Pass
+
+; Compile tests for the supporting IDL PROs
+comp_test, 'build_beam5', Pass=Pass
+  test_pass = test_pass+Pass
+comp_test, 'build_beam_grid2', Pass=Pass
+  test_pass = test_pass+Pass
+comp_test, 'alfa_clean7', Pass=Pass
+  test_pass = test_pass+Pass
+
+; Beam Building Test
+restore, 'grid_test.sav'
+beam_test, grid, Pass=Pass
+  test_pass = test_pass+Pass
+
+; Stop Timer
+t_stop = systime(1)
+print,'--'
+print,'Used '+string(t_stop-t_start, Format='(F0.2)')+' seconds'
+print,'--'
+
+test_fail = test_totl - test_pass
+print,'Tests Passed: '+strtrim(string(test_pass),2)+' of '+strtrim(string(test_totl),2)+ $
+	' ('+string(100.0*test_pass/test_totl, Format='(F5.1)')+'%)'
+print,'Tests Failed: '+strtrim(string(test_fail),2)+' of '+strtrim(string(test_totl),2)+ $
+	' ('+string(100.0*test_fail/test_totl, Format='(F5.1)')+'%)'
+print,'--'

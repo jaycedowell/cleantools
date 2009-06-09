@@ -123,7 +123,6 @@ map_d = (double *) map->value.arr->data;
 				}
 			}
 		}
-		map_tot = map_tot + map_pnt;
 
 		*(map_d+l) = map_pnt;
 	}
@@ -132,6 +131,13 @@ map_d = (double *) map->value.arr->data;
 /* Normalize by first totaling the beam map and then dividing every element
  * by the beam total.  This way, total(beam) = 1. Again, we can do this in a
  * parallel fashion. */
+# ifdef _OPENMP
+	#pragma omp parallel for shared(map_tot)
+#endif
+for(l=0; l<(n_map*n_map); l++) {
+	map_tot = map_tot + *(map_d+l);
+}
+
 #ifdef _OPENMP
 	#pragma omp parallel for schedule(static)
 #endif
