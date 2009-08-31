@@ -57,14 +57,15 @@ end
 
 ; compute_s - compute the entry needed by MEM (Cornwell & Evans 1985)
 function compute_s, image, model
-	entropy = -total( model * alog(model/(image>1e-3)), /Double)
+	;entropy = -total( model * alog(model/(image>1e-3)), /Double, /NaN)
+	entropy = -total( model * alog(model>1e-3), /Double, /NaN)
 
 	return, entropy
 end
 
 ; compute_c - compute the chi^2 needed by MEM
 function compute_c, image, model, sigma
-	chi2 = total( (image-model)^2.0, /Double) / sigma^2.0
+	chi2 = total( (image-model)^2.0, /Double, /NaN) / sigma^2.0
 
 	return, chi2
 end
@@ -259,8 +260,7 @@ b_norm = total(total(beams, 3, /Double), 3, /Double)
 	N = n_elements(working[0,*,*])
 	window,0,XSize=128*3,YSize=128*3
 	
-	;curr_beam = reform(beams[x_size/2, y_size/2, bxl:bxh, byl:byh])
-	curr_beam = reform(beams[x_size/2, y_size/2, *, *])
+	curr_beam = reform(beams[x_size/2, y_size/2, bxl:bxh, byl:byh])
 	curr_beam = curr_beam / total(curr_beam, /Double)
 
 	; Loop over channels
@@ -268,76 +268,40 @@ b_norm = total(total(beams, 3, /Double), 3, /Double)
 		image = reform(working[c,*,*])
 		; Initial model is smoothed version of image with all
 		; value >=0
-		model = image>0.0
+		model = (image>0.0) / 1.0
 
 		lambda = 0.01
-		prev_q = 1.0d20
+		prev_q = -1.0d20
 		for l=0L,(NIter-1) do begin
 			prev_model = model
 			new_model  = model
 
-; 			gk = 0.0*image
-; 			for k=0,(N-1) do begin
-; 				bx = k mod x_size
-; 				by = k / x_size
-; 				curr_beam = reform(beams[bx, by, bxl:bxh, byl:byh])
-; 				curr_beam = curr_beam / total(curr_beam, /Double)
-; 		
-; 				gk[k] = compute_g(prev_model, curr_beam, k)
-; 			endfor
-			bx = x_size / 2
-			by = y_size / 2
-			curr_beam = reform(beams[bx, by, bxl:bxh, byl:byh])
-			curr_beam = curr_beam / max(curr_beam)
-			gk = convolve(prev_model, curr_beam)
+			gk = convolve(prev_model, curr_beam, FT_PSF=PSF_TF)
 
-; 			for j=0,(N-1) do begin
-; 				bx = j mod x_size
-; 				by = j / x_size
-; 
-; 				curr_beam = reform(beams[x_size/2, y_size/2, bxl:bxh, byl:byh])
-; 				curr_beam = curr_beam / total(curr_beam, /Double)
-; 
-; 				mj_sum = 0.0
-; 				for k=0,(N-1) do begin
-; 					if k-j LT 0 then continue
-; 					;print,curr_beam[k-j],(image[k]-gk[k])
-; 					mj_sum += curr_beam[k-j]*(image[k]-gk[k])
-; 				endfor
-; 				
-; 				new_model[j] = exp(lambda*mj_sum/MapRMS^2.0 - 1.0)
-; 				;print,mj_sum,model[j]
-; 				if finite(new_model[j]) NE 1 then adfadsf
-; 			endfor
-			mj_sum = convolve((image-gk)/MapRMS^2.0, curr_beam)
+			mj_sum = convolve((image-gk)/MapRMS^2.0, curr_beam, FT_PSF=PSF_FT)
 			new_model = exp(lambda*mj_sum - 1.0)
-			scale_factor = total(image) / total(convolve(new_model, curr_beam))
-			
-			new_model = new_model * scale_factor
-			print,scale_factor
 
 			entropy = compute_s(image, new_model)
-			chi2 = compute_c(image, new_model, MapRMS)
+			chi2 = compute_c(image, convolve(new_model, curr_beam, FT_PSF=PSF_FT), MapRMS)
 			q = compute_q(image, new_model, MapRMS, lambda)
 
-			q = entropy
-			if abs(q) LT abs(prev_q) AND l GT 100 then begin
+			q = 0.0-entropy
+			if q LT prev_q AND l GT 300 then begin
 				model = prev_model
+				print,'entropy exit'
 				goto, CleanDone
 			endif
-			if chi2 LE N then goto, CleanDone
+			if chi2 LE N then begin
+				print,'chi^2 exit'
+				goto, CleanDone
+			endif
 
 			print,c,l,lambda,entropy,chi2
 		
 			chi2_diff = N - chi2
-			;if chi2_diff LT 0 then begin
-			;	lambda += 10.0
-			;endif else begin
-			;	lambda += (sqrt(chi2_diff)/10.0>1.0)
-			;endelse
 			lambda += 0.01
 			
-			model = (new_model+prev_model)/2.0
+			model = (new_model+3.0*prev_model)/4.0
 
 			tvscl,congrid(reform(image,x_size,y_size),128,128),  0,256
 			tvscl,congrid(reform(gk,   x_size,y_size),128,128),128,256
@@ -348,7 +312,7 @@ b_norm = total(total(beams, 3, /Double), 3, /Double)
 			tv,bytscl(congrid(model,128,128), min=-5, max=10), 256,128
 
 			tvscl,congrid(shift((fft(image))^2.0,x_size/2,y_size/2),128,128),   0,0
-			tvscl,congrid(new_model-prev_model,                     128,128), 128,0
+			tvscl,congrid(model-prev_model,                         128,128), 128,0
 			tvscl,congrid(shift((fft(gk))^2.0,x_size/2,y_size/2),   128,128), 256,0
 
 			prev_q = q
@@ -360,7 +324,6 @@ b_norm = total(total(beams, 3, /Double), 3, /Double)
 		CleanDone:
 		cleand[c,*,*] = model
 		working[c,*,*] = image - model
-		
 
 	endfor
 ; endelse
@@ -388,24 +351,6 @@ endfor
 ; And convert exit_status codes to the standard type...
 exit_status = (exit_status < 1)
 
-; Restore the results to a gaussian beam with FWHM, uh, FWHM
-if n_elements(FWHM) NE 2 then begin
-	if n_elements(FWHM) EQ 1 then begin
-		FWHM = replicate(FWHM,2)
-	endif else begin
-		FWHM = [3.1, 4.6]
-	endelse
-endif
-if n_elements(PA) EQ 0 then PA = 0.0
-PA = PA/!radeg
-restore_sigma = double(FWHM) / 2.0 / sqrt( 2.0 * alog(2.0) )
-if Not Keyword_Set(Silent) then begin
-	print,'> restore'
-	print,'>  using Gaussian with'+string(FWHM[0], Format='(F5.2)')+"'x"+$
-	       string(FWHM[1], Format='(F5.2)')+"' FWHM"
-endif
-Output = [Output, '> restore', '>  using Gaussian with'+string(FWHM[0], Format='(F5.2)')+"'x"+string(FWHM[1], Format='(F5.2)')+"' FWHM"]
-
 ; Build restore kernel up
 restore_beam = dblarr(21,21)
 is = dblarr(21,21)
@@ -420,11 +365,6 @@ jsp = -is*sin(PA) + js*cos(PA)
 restore_beam = exp(-isp^2.0/(2.0*restore_sigma[0]^2.0) - jsp^2.0/(2.0*restore_sigma[1]^2.0))
 restore_beam = restore_beam / total(restore_beam, /Double)
 
-; ; Convolve with restore beam
-; for c=C_Range[0],C_Range[1] do begin
-; 	temp = reform(cleand[c,*,*])
-; 	cleand[c,*,*] = convolve(temp, restore_beam)
-; endfor
 if Not Keyword_Set(Silent) then begin
 	print,'>  clean map flux '+strtrim(string(total(cleand)/1000.0),2)+' Jy/beam'
 	print,'>  residual flux  '+strtrim(string(total(working/1000.0)),2)+' Jy/beam'
@@ -432,8 +372,6 @@ endif
 Output = [Output, '>  clean map flux '+strtrim(string(total(cleand)/1000.0),2)+' Jy/beam', $
 	'>  residual flux  '+strtrim(string(total(working/1000.0)),2)+' Jy/beam']
 
-; And add back in residuals
-;cleand = cleand + working
 if Not Keyword_Set(Silent) then begin
 	print,'>  total flux     '+strtrim(string(total(cleand)/1000.0),2)+' Jy/beam'
 	print,'>  input flux     '+strtrim(string(total(dbox)/1000.0),2)+' Jy/beam'
@@ -484,52 +422,71 @@ if n_elements(Continuum) NE 0 then begin
 		c_cleand = Continuum*0.0
 		c_working = Continuum
 		c_exit_status = -1
-		
-		for l=0L,(NIter-1) do begin
-			; Select only one pixel at a time
-			peak = (where(max(c_working) EQ c_working))[0]
-			; Amount of flux at peak
-			peak_value = c_working[peak]
-	
-			; Check to see if we can leave yet.  This is to test for the
-			; flux/sigma limits
-			if peak_value LE (Flux+Sigma*MapRms) then begin
-				c_exit_status[0] = 1+l
-				goto, C_CleanDone	
-			endif
-	
-			; Convert from 1D -> 2D index
-			peak_x = peak mod x_size
-			peak_y = peak / x_size
-	
-			; Setup boundaries of removal to handle the edges.
-			work_x_lo = max([(peak_x - b_size),0])
-			work_x_hi = min([(peak_x + b_size),x_size-1])
-			work_y_lo = max([(peak_y - b_size),0])
-			work_y_hi = min([(peak_y + b_size),y_size-1])
-			beam_x_lo = b_size - (peak_x - work_x_lo)
-			beam_x_hi = b_size - (peak_x - work_x_hi)
-			beam_y_lo = b_size - (peak_y - work_y_lo)
-			beam_y_hi = b_size - (peak_y - work_y_hi)
-		
-			; Scale beam and fix boundaries to find what we need to remove
-			to_remove = reform(gain * peak_value * beams[peak_x, peak_y, beam_x_lo:beam_x_hi, beam_y_lo:beam_y_hi])
-		
-			; Take that amount out of the working data array.  We don't update working 
-			; and cleand until we know that removing this won't push total(working) < 0.
-			temp = c_working
-			temp[work_x_lo:work_x_hi, work_y_lo:work_y_hi] = $
-				temp[work_x_lo:work_x_hi, work_y_lo:work_y_hi] - to_remove
-			
-			; We made it this far so update working
-			c_working = temp
-			; And add it into the cleaned map
-			c_cleand[peak_x, peak_y] = c_cleand[peak_x, peak_y] + $
-				total(gain * peak_value * beams[peak_x, peak_y, *, *])
-		endfor
 
+		window,1,XSize=128*3,YSize=128*3
+	
+		curr_beam = reform(beams[x_size/2, y_size/2, bxl:bxh, byl:byh])
+		curr_beam = curr_beam / total(curr_beam, /Double)
+		
+		image = reform(c_working[*,*])
+		; Initial model is smoothed version of image with all
+		; value >=0
+		model = (image>0.0) / 1.0
+
+		lambda = 0.01
+		prev_q = -1.0d20
+		for l=0L,(NIter-1) do begin
+			prev_model = model
+			new_model  = model
+
+			gk = convolve(prev_model, curr_beam, FT_PSF=PSF_TF)
+
+			mj_sum = convolve((image-gk)/MapRMS^2.0, curr_beam, FT_PSF=PSF_FT)
+			new_model = exp(lambda*mj_sum - 1.0)
+
+			entropy = compute_s(image, new_model)
+			chi2 = compute_c(image, convolve(new_model, curr_beam, FT_PSF=PSF_FT), MapRMS)
+			q = compute_q(image, new_model, MapRMS, lambda)
+
+			q = 0.0-entropy
+			if q LT prev_q AND l GT 300 then begin
+				model = prev_model
+				print,'entropy exit'
+				goto, C_CleanDone
+			endif
+			if chi2 LE N then begin
+				print,'chi^2 exit'
+				goto, C_CleanDone
+			endif
+
+			print,'C',l,lambda,entropy,chi2
+		
+			chi2_diff = N - chi2
+			lambda += 0.01
+			
+			model = (new_model+3.0*prev_model)/4.0
+
+			tvscl,congrid(reform(image,x_size,y_size),128,128),  0,256
+			tvscl,congrid(reform(gk,   x_size,y_size),128,128),128,256
+			tvscl,congrid(reform(model,x_size,y_size),128,128),256,256
+
+			tv,bytscl(congrid(image,128,128), min=-5, max=10),   0,128
+			tv,bytscl(congrid(gk,   128,128), min=-5, max=10), 128,128
+			tv,bytscl(congrid(model,128,128), min=-5, max=10), 256,128
+
+			tvscl,congrid(shift((fft(image))^2.0,x_size/2,y_size/2),128,128),   0,0
+			tvscl,congrid(model-prev_model,                         128,128), 128,0
+			tvscl,congrid(shift((fft(gk))^2.0,x_size/2,y_size/2),   128,128), 256,0
+
+			prev_q = q
+
+			;wait,0.2
+		endfor
+	
 		; Exit point if needed	
 		C_CleanDone:
+		c_cleand[*,*] = model
+		c_working[*,*] = image - model
 
 ; 	endelse
 
@@ -554,23 +511,12 @@ if n_elements(Continuum) NE 0 then begin
 	exit_status = (exit_status < 1)
 
 	if Not Keyword_Set(Silent) then begin
-		print,'> restore'
-		print,'>  using Gaussian with'+string(FWHM[0], Format='(F5.2)')+"'x"+string(FWHM[1], Format='(F5.2)')+"' FWHM"
-	endif
-	Output = [Output, '> restore', '>  using Gaussian with'+string(FWHM[0], Format='(F5.2)')+"'x"+string(FWHM[1], Format='(F5.2)')+"' FWHM"]
-
-	temp = c_cleand
-	c_cleand = convolve(temp, restore_beam)
-
-	if Not Keyword_Set(Silent) then begin
 		print,'>  clean continuum map flux '+strtrim(string(total(c_cleand)/1000.0),2)+' Jy/beam'
 		print,'>  residual flux  '+strtrim(string(total(c_working/1000.0)),2)+' Jy/beam'
 	endif
 	Output = [Output, '>  clean continuum map flux '+strtrim(string(total(c_cleand)/1000.0),2)+' Jy/beam', $
 		'>  residual flux  '+strtrim(string(total(c_working/1000.0)),2)+' Jy/beam']
 	
-	; And add back in residuals
-	c_cleand = c_cleand + c_working
 	if Not Keyword_Set(Silent) then begin
 		print,'>  continuum total flux     '+strtrim(string(total(c_cleand)/1000.0),2)+' Jy/beam'
 		print,'>  continuum input flux     '+strtrim(string(total(Continuum)/1000.0),2)+' Jy/beam'
