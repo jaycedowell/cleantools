@@ -57,8 +57,8 @@ end
 
 ; compute_s - compute the entry needed by MEM (Cornwell & Evans 1985)
 function compute_s, image, model
-	;entropy = -total( model * alog(model/(image>1e-3)), /Double, /NaN)
-	entropy = -total( model * alog(model>1e-3), /Double, /NaN)
+	;entropy = -total( model * alog(model/(image>1e-1)), /Double, /NaN)
+	entropy = -total( model * alog(model>1e-1), /Double, /NaN)
 
 	return, entropy
 end
@@ -128,7 +128,7 @@ end
 ;  Sigma -> Sigma level with which to clean down to.  
 ;  Gain - > Gain to use in the CLEAN loop.  The default is 0.05.
 ;  Range -> Two element array of channel number to clean
-;  AllowSum -> Allow alfa_clean7 to sum channels together to improve the per channel S/N
+;  AllowSum -> Allow alfa_clean8 to sum channels together to improve the per channel S/N
 ;  FWHM -> The FWHM of the Gaussian restore beam.  The default is 3.1' x 4.6'
 ;  PA -> The position angle (E of N) for the Gaussian restore beam.  The default is 0 deg.
 ;  Silent -> Turn off information statements.  The default is to display them.
@@ -162,12 +162,12 @@ x_size = (size(dbox))[2]
 y_size = (size(dbox))[3]
 if Not Keyword_Set(Silent) then begin
 	print,''
-	print,'alfa_clean7 started:'
+	print,'alfa_clean8 started:'
 	print,'> setup'
 	print,'>  loaded '+string(v_size,Format='(I4)')+'x'+string(x_size,Format='(I3)')+'x'+ $
 		string(y_size,Format='(I3)')+' data cube'
 endif
-Output = ['alfa_clean7 started:','> setup']
+Output = ['alfa_clean8 started:','> setup']
 Output = [Output, '>  loaded '+string(v_size,Format='(I4)')+'x'+string(x_size,Format='(I3)')+ $
 	'x'+string(y_size,Format='(I3)')+' data cube']
 
@@ -260,7 +260,11 @@ b_norm = total(total(beams, 3, /Double), 3, /Double)
 	N = n_elements(working[0,*,*])
 	window,0,XSize=128*3,YSize=128*3
 	
-	curr_beam = reform(beams[x_size/2, y_size/2, bxl:bxh, byl:byh])
+	if bxl LT 0 AND byl+1 LT 0 then begin
+		curr_beam = reform(beams[x_size/2, y_size/2, *, *])
+	endif else begin
+		curr_beam = reform(beams[x_size/2, y_size/2, bxl:bxh, byl:byh])
+	endelse
 	curr_beam = curr_beam / total(curr_beam, /Double)
 
 	; Loop over channels
@@ -272,6 +276,7 @@ b_norm = total(total(beams, 3, /Double), 3, /Double)
 
 		lambda = 0.01
 		prev_q = -1.0d20
+		prev_c = 1.0d20
 		for l=0L,(NIter-1) do begin
 			prev_model = model
 			new_model  = model
@@ -286,7 +291,7 @@ b_norm = total(total(beams, 3, /Double), 3, /Double)
 			q = compute_q(image, new_model, MapRMS, lambda)
 
 			q = 0.0-entropy
-			if q LT prev_q AND l GT 300 then begin
+			if q LT prev_q AND l GT 200 then begin
 				model = prev_model
 				print,'entropy exit'
 				goto, CleanDone
@@ -316,6 +321,7 @@ b_norm = total(total(beams, 3, /Double), 3, /Double)
 			tvscl,congrid(shift((fft(gk))^2.0,x_size/2,y_size/2),   128,128), 256,0
 
 			prev_q = q
+			prev_c = chi2
 
 			;wait,0.2
 		endfor
@@ -350,20 +356,6 @@ for c=C_Range[0],C_Range[1] do begin
 endfor
 ; And convert exit_status codes to the standard type...
 exit_status = (exit_status < 1)
-
-; Build restore kernel up
-restore_beam = dblarr(21,21)
-is = dblarr(21,21)
-js = dblarr(21,21)
-for i=0,20 do begin 
-	is[i,*] = i-10
-	js[*,i] = i-10
-endfor
-isp = is*cos(PA) + js*sin(PA)
-jsp = -is*sin(PA) + js*cos(PA)
-
-restore_beam = exp(-isp^2.0/(2.0*restore_sigma[0]^2.0) - jsp^2.0/(2.0*restore_sigma[1]^2.0))
-restore_beam = restore_beam / total(restore_beam, /Double)
 
 if Not Keyword_Set(Silent) then begin
 	print,'>  clean map flux '+strtrim(string(total(cleand)/1000.0),2)+' Jy/beam'
