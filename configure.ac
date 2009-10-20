@@ -97,7 +97,7 @@ dnl AC_PATH_HEADER(variable,header,action-if-not-found,default-locations)
 dnl Note that the above may set variable to an empty value if the header is
 dnl already in the include path+6511
 AC_DEFUN([AC_PATH_HEADER], [{
-AC_MSG_CHECKING([for $2])
+AC_MSG_CHECKING([for path to $2])
 AC_CACHE_VAL(ac_cv_pheader_$1,
 [
   ac_found=
@@ -177,6 +177,23 @@ AC_CHECK_LIB([m], [sqrt])
 AC_HEADER_STDC
 AC_CHECK_HEADERS([stdio.h math.h string.h])
 
+## Check for IDL executable to make sure IDL is even installed before
+## we try to find the idl_export.h header file.  This sets the variable 
+## 'IDL_PRG' which we use in the Makefile for the test condition.
+AC_ARG_WITH([idl], 
+	AS_HELP_STRING([--with-idl-exec=PATH], [specify the location of the IDL binary]), 
+	[
+		AC_PATH_PROGS([IDL_PRG], [idl], [0], ["$withval":"$PATH"])
+		if test "$IDL_PRG" == "0"; then
+			AC_MSG_ERROR([IDL executable not found in specified path])
+		fi], 
+	[
+		AC_PATH_PROGS([IDL_PRG], [idl], [0])
+		if test "$IDL_PRG" == "0"; then
+			AC_MSG_ERROR([cannot find IDL binary; try --with-idl-exec=PATH])
+		fi]) 
+
+## Check for the idl_export.h header file in the usual (?) places.
 AC_ARG_WITH([idl-inc],
         AS_HELP_STRING([--with-idl-inc=PATH], [specify the location of the IDL include directory]),
         [
@@ -189,7 +206,30 @@ AC_ARG_WITH([idl-inc],
 		["/usr/local/itt/idl/external/include":"/usr/local/rsi/idl/external/include"])])
 
 # Checks for typedefs, structures, and compiler characteristics.
-
+## Check for 64-bit or 32-bit IDL installation to determine if we need 
+## '-m64' or '-m32' in the CFLAGS string in the Makefile
+AC_MSG_CHECKING([if IDL install is 64-bit])
+AC_COMPILE_IFELSE(
+	AC_LANG_PROGRAM([[
+		#ifdef HAVE_STDIO_H
+		  #include <stdio.h>
+		#endif
+		#ifdef HAVE_MATH_H
+		  #include <math.h>
+		#endif
+		#include "$ac_cv_pheader_IDL_HEADER/idl_export.h"
+		#if IDL_SIZEOF_C_PTR == 8
+		  int bits64;
+		#else
+		  IDL is not running on a 64-bit machine
+		#endif]]),
+	[
+		AC_MSG_RESULT(yes)
+		AC_SUBST([BITS], [64])],
+	[
+		AC_MSG_RESULT(no)
+		AC_SUBST([BITS], [32])
+	])
 
 # Checks for library functions.
 

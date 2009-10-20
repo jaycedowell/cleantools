@@ -1,7 +1,7 @@
 # $ID: @PACKAGE_NAME@ v@PACKAGE_VERSION@ (@PACKAGE_DATE@) Exp $
 CC = @CC@
 
-CFLAGS= @CFLAGS@ -c -O3 -fPIC -m64 -D_REENTRANT @OPENMP_CFLAGS@ -I@IDL_HEADER@
+CFLAGS= @CFLAGS@ -c -O3 -fPIC -m@BITS@ -D_REENTRANT @OPENMP_CFLAGS@ -I@IDL_HEADER@
 LDFLAGS=@LDFLAGS@ -shared -lm @OPENMP_CFLAGS@
 SRCS=build_beam.c alfa_clean.c lib_version.c
 OBJS=build_beam.o alfa_clean.o lib_version.o
@@ -17,7 +17,7 @@ clean_tools.so: $(OBJS)
 # Test
 .PHONY : test
 test:
-	idl -e '@clean_test.batch' || exit $$?;
+	@IDL_PRG@ -e '@clean_test.batch' || exit $$?;
 
 # Clean up
 .PHONY : clean

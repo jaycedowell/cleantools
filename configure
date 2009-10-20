@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS PACKAGE_DATE CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT OPENMP_CFLAGS CPP EGREP IDL_HEADER LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS PACKAGE_DATE CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT OPENMP_CFLAGS CPP EGREP IDL_PRG IDL_HEADER BITS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -849,6 +849,7 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-idl-exec=PATH    specify the location of the IDL binary
   --with-idl-inc=PATH     specify the location of the IDL include directory
 
 Some influential environment variables:
@@ -3265,14 +3266,128 @@ fi
 done
 
 
+## Check for IDL executable to make sure IDL is even installed before
+## we try to find the idl_export.h header file.  This sets the variable
+## 'IDL_PRG' which we use in the Makefile for the test condition.
+
+# Check whether --with-idl or --without-idl was given.
+if test "${with_idl+set}" = set; then
+  withval="$with_idl"
+
+		for ac_prog in idl
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_path_IDL_PRG+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $IDL_PRG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_IDL_PRG="$IDL_PRG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+as_dummy=""$withval":"$PATH""
+for as_dir in $as_dummy
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_IDL_PRG="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+  ;;
+esac
+fi
+IDL_PRG=$ac_cv_path_IDL_PRG
+
+if test -n "$IDL_PRG"; then
+  echo "$as_me:$LINENO: result: $IDL_PRG" >&5
+echo "${ECHO_T}$IDL_PRG" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+  test -n "$IDL_PRG" && break
+done
+test -n "$IDL_PRG" || IDL_PRG="0"
+
+		if test "$IDL_PRG" == "0"; then
+			{ { echo "$as_me:$LINENO: error: IDL executable not found in specified path" >&5
+echo "$as_me: error: IDL executable not found in specified path" >&2;}
+   { (exit 1); exit 1; }; }
+		fi
+else
+
+		for ac_prog in idl
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_path_IDL_PRG+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $IDL_PRG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_IDL_PRG="$IDL_PRG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_IDL_PRG="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+  ;;
+esac
+fi
+IDL_PRG=$ac_cv_path_IDL_PRG
+
+if test -n "$IDL_PRG"; then
+  echo "$as_me:$LINENO: result: $IDL_PRG" >&5
+echo "${ECHO_T}$IDL_PRG" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+  test -n "$IDL_PRG" && break
+done
+test -n "$IDL_PRG" || IDL_PRG="0"
+
+		if test "$IDL_PRG" == "0"; then
+			{ { echo "$as_me:$LINENO: error: cannot find IDL binary; try --with-idl-exec=PATH" >&5
+echo "$as_me: error: cannot find IDL binary; try --with-idl-exec=PATH" >&2;}
+   { (exit 1); exit 1; }; }
+		fi
+fi;
+
+## Check for the idl_export.h header file in the usual (?) places.
 
 # Check whether --with-idl-inc or --without-idl-inc was given.
 if test "${with_idl_inc+set}" = set; then
   withval="$with_idl_inc"
 
 	 {
-echo "$as_me:$LINENO: checking for idl_export.h" >&5
-echo $ECHO_N "checking for idl_export.h... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking for path to idl_export.h" >&5
+echo $ECHO_N "checking for path to idl_export.h... $ECHO_C" >&6
 if test "${ac_cv_pheader_IDL_HEADER+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -3362,8 +3477,8 @@ fi
 else
 
 	 {
-echo "$as_me:$LINENO: checking for idl_export.h" >&5
-echo $ECHO_N "checking for idl_export.h... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking for path to idl_export.h" >&5
+echo $ECHO_N "checking for path to idl_export.h... $ECHO_C" >&6
 if test "${ac_cv_pheader_IDL_HEADER+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -3453,7 +3568,76 @@ fi
 fi;
 
 # Checks for typedefs, structures, and compiler characteristics.
+## Check for 64-bit or 32-bit IDL installation to determine if we need
+## '-m64' or '-m32' in the CFLAGS string in the Makefile
+echo "$as_me:$LINENO: checking if IDL install is 64-bit" >&5
+echo $ECHO_N "checking if IDL install is 64-bit... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
 
+		#ifdef HAVE_STDIO_H
+		  #include <stdio.h>
+		#endif
+		#ifdef HAVE_MATH_H
+		  #include <math.h>
+		#endif
+		#include "$ac_cv_pheader_IDL_HEADER/idl_export.h"
+		#if IDL_SIZEOF_C_PTR == 8
+		  int bits64;
+		#else
+		  IDL is not running on a 64-bit machine
+		#endif
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+
+		echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+		BITS=64
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+		echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+		BITS=32
+
+
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 
 # Checks for library functions.
 
@@ -4105,7 +4289,9 @@ s,@OBJEXT@,$OBJEXT,;t t
 s,@OPENMP_CFLAGS@,$OPENMP_CFLAGS,;t t
 s,@CPP@,$CPP,;t t
 s,@EGREP@,$EGREP,;t t
+s,@IDL_PRG@,$IDL_PRG,;t t
 s,@IDL_HEADER@,$IDL_HEADER,;t t
+s,@BITS@,$BITS,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t
 s,@LTLIBOBJS@,$LTLIBOBJS,;t t
 CEOF
