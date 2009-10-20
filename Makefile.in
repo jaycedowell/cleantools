@@ -14,10 +14,15 @@ $(SRCS):
 clean_tools.so: $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $(OBJS)
 
-# Test
+# Test (short; ~6s on viridis)
 .PHONY : test
 test:
-	@IDL_PRG@ -e '@clean_test.batch' || exit $$?;
+	@IDL_PRG@ test/clean_test.batch || exit $$?;
+
+# Test (long; ~92s on viridis)
+.PHONY : testall
+testall:
+	@IDL_PRG@ test/clean_test2.batch || exit $$?;
 
 # Clean up
 .PHONY : clean

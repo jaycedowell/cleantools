@@ -95,7 +95,7 @@ block_pass = 0
 blocK_fail = 0
 
 restore, 'test/grid_test.sav'
-beam_test, grid, Pass=Pass, Fail=Fail
+beam_test, grid, Pass=Pass, Fail=Fail, /Extended
   block_pass = block_pass+Pass
   block_fail = block_fail+Fail
 
