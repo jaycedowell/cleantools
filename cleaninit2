@@ -1,7 +1,7 @@
 linkimage,'build_beam_observer', $
 	agcdir+'../deconvolution/clean_tools.so', $
 	1,'build_beam_observer',max_args=7,min_args=7
-linkimage,'build_beam_observer', $
+linkimage,'build_beam_worker', $
 	agcdir+'../deconvolution/clean_tools.so', $
 	1,'build_beam_worker',max_args=6,min_args=6
 linkimage,'alfa_clean_worker', $

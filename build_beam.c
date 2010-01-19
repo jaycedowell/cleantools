@@ -9,7 +9,7 @@ int idl_round(double numb) {
 	int result;
 	double remainder;
 
-	if( numb < 0 ) {
+	if( numb < 0.0 ) {
 		result = (int) numb;
 		remainder = result - numb;
 		if( remainder >= 0.5 ){
@@ -27,11 +27,14 @@ int idl_round(double numb) {
 }
 
 double total_beam(double *antpat, int b, int startx, int stopx, int y, int n_pix) {
-	int i;
-	long idx = b*n_pix*n_pix + y*n_pix + startx;
+	int x;
+	long count;
 	double total = 0.0;
-	for(i=0; i<(stopx-startx); i++) {
-		total += antpat[idx+i];
+
+	count = b + 7*startx + 7*n_pix*y;
+	for(x=startx; x<=stopx; x++) {
+		total += *(antpat+count);
+		count += 7;
 	}
 	return(total);
 }
@@ -85,14 +88,16 @@ pnt_ra = (double) pnt_ra_raw->value.d;
 
 /* Gather together array dimensions */
 n_drifts = (int) (drift_dec->value.arr->n_elts / 7);
-n_pix = (int) sqrt( (int) (antpat->value.arr->n_elts) );
-n_map = (int) (antpat->value.arr->n_elts / 20 );
+n_pix = (int) sqrt( antpat->value.arr->n_elts / 7 );
+n_map = (int) (n_pix / 20 );
 n_rec = (int) ((n_pix - 4) / 5 );
 
+printf("Drifts: %i\nPix: %i\nMap: %i\nRec: %i\n", n_drifts, n_pix, n_map, n_rec);
+
 /* Define local variables */
-int d,b,rp,dec_count,idx1,idx2;
+int d,b,rp,dec_count,rec_count,obs_count;
 double cnt_dec,dec_offset,loc_y;
-double st_rec,sp_rec;
+int st_rec,sp_rec;
 
 /* Define constants */
 double degrad=M_PI / 180.0;
@@ -105,20 +110,20 @@ antpat_d = (double *) antpat->value.arr->data;
 obs_d = (double *) obs->value.arr->data;
 
 dec_count = 0;
+rec_count = 0;
+obs_count = 0;
 for(d=0; d<n_drifts; d++) {
 	for(b=0; b<7; b++) {
+		printf("antPat: %g @ %i,%i,%i -> %i\n", *(antpat_d+b+7L*(n_pix/2L)+7L*n_pix*(n_pix/2L)), b, n_pix/2L, n_pix/2L, b+7L*(n_pix/2L)+7L*n_pix*(n_pix/2L));
 		cnt_dec = *(drift_dec_d+dec_count++);
 
-		dec_offset = (cnt_dec - pnt_dec) * 60.0;
-		loc_y = idl_round(dec_offset * 20.0) + (n_map * 10.0);
-		drift_err_d[d*7+b] = (loc_y - (n_map*10.0)) - dec_offset * 20.0;
+		dec_offset = (pnt_dec - cnt_dec) * 60.0;
+		loc_y = idl_round(dec_offset * 20.0) + (n_map*10.0);
+		*(drift_err_d+d*7+b) = (loc_y - (n_map*10.0)) - dec_offset * 20.0;
 
 		if( loc_y >= 0 && loc_y <= (n_pix-1)) {
-			idx1 = 0*7*n_drifts + 7*d + b;
-			idx2 = 1*7*n_drifts + 7*d + b;
-
-			st_rec = idl_round( (drift_ra_rec_d[idx1] - pnt_ra)*1200.0 + n_rec/2);
-			sp_rec = idl_round( (drift_ra_rec_d[idx2] - pnt_ra)*1200.0 + n_rec/2);
+			st_rec = idl_round( (*(drift_ra_rec_d+rec_count++) - pnt_ra)*1200.0 + n_rec/2);
+			sp_rec = idl_round( (*(drift_ra_rec_d+rec_count++) - pnt_ra)*1200.0 + n_rec/2);
 
 			if( st_rec < 0 ) {
 				st_rec = 0;
@@ -127,12 +132,14 @@ for(d=0; d<n_drifts; d++) {
 				sp_rec = (n_rec-1);
 			}
 
-			for(rp=st_rec; rp<=st_rec; rp++) {
-				idx1 = (n_rec-1-rp)*7*n_drifts + 7*d + b;
-				obs_d[idx1] = total_beam(antpat_d, b, rp*5, rp*5+4, loc_y, n_pix);
-
+			for(rp=st_rec; rp<=sp_rec; rp++) {
+				*(obs_d+rp+obs_count) = total_beam(antpat_d, b, rp*5, rp*5+4, (int) loc_y, n_pix);
 			}
+		} else {
+			rec_count++;
+			rec_count++;
 		}
+		obs_count++;
 	}
 }
 
