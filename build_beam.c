@@ -5,6 +5,141 @@
 	#include <omp.h>
 #endif
 
+int idl_round(double numb) {
+	int result;
+	double remainder;
+
+	if( numb < 0 ) {
+		result = (int) numb;
+		remainder = result - numb;
+		if( remainder >= 0.5 ){
+			result = result - 1;
+		}
+	} else {
+		result = (int) numb;
+		remainder = numb - result;
+		if( remainder >= 0.5 ){
+			result = result + 1;
+		}
+	}
+
+	return(result);
+}
+
+double total_beam(double *antpat, int b, int startx, int stopx, int y, int n_pix) {
+	int i;
+	long idx = b*n_pix*n_pix + y*n_pix + startx;
+	double total = 0.0;
+	for(i=0; i<(stopx-startx); i++) {
+		total += antpat[idx+i];
+	}
+	return(total);
+}
+
+IDL_VPTR build_beam_observer(int argc, IDL_VPTR argv[]) {
+/* Declare variables from IDL */
+IDL_VPTR drift_dec, drift_err, drift_ra_rec;	// For arrays
+IDL_VPTR antpat, obs;				// "
+IDL_VPTR pnt_dec_raw, pnt_ra_raw;		// For scalars
+double pnt_dec, pnt_ra;
+int n_drifts, n_pix, n_map, n_rec;
+double *drift_dec_d, *drift_err_d, *drift_ra_rec_d;
+double *antpat_d, *obs_d;
+
+/* Moving arrays to C variables */
+drift_dec    = argv[0];
+drift_err    = argv[1];
+pnt_dec_raw  = argv[2];
+pnt_ra_raw   = argv[3];
+drift_ra_rec = argv[4];
+antpat       = argv[5];
+obs          = argv[6];
+
+/* Data type checks */
+/** Arrays **/
+IDL_ENSURE_SIMPLE(drift_dec);
+IDL_ENSURE_ARRAY(drift_dec);
+IDL_ENSURE_SIMPLE(drift_err);
+IDL_ENSURE_ARRAY(drift_err);
+IDL_ENSURE_SIMPLE(drift_ra_rec);
+IDL_ENSURE_ARRAY(drift_ra_rec);
+IDL_ENSURE_SIMPLE(antpat);
+IDL_ENSURE_ARRAY(antpat);
+IDL_ENSURE_SIMPLE(obs);
+IDL_ENSURE_ARRAY(obs);
+/** Scalars **/
+IDL_ENSURE_SIMPLE(pnt_dec_raw);
+IDL_ENSURE_SCALAR(pnt_dec_raw);
+IDL_ENSURE_SIMPLE(pnt_ra_raw);
+IDL_ENSURE_SCALAR(pnt_ra_raw);
+
+/* Move scalars to type and then C variables */
+if( pnt_dec_raw->type != IDL_TYP_DOUBLE ) {
+	pnt_dec_raw = IDL_CvtDbl(1, &pnt_dec_raw);
+}
+pnt_dec = (double) pnt_dec_raw->value.d;
+if( pnt_ra_raw->type != IDL_TYP_DOUBLE ) {
+	pnt_ra_raw = IDL_CvtDbl(1, &pnt_ra_raw);
+}
+pnt_ra = (double) pnt_ra_raw->value.d;
+
+/* Gather together array dimensions */
+n_drifts = (int) (drift_dec->value.arr->n_elts / 7);
+n_pix = (int) sqrt( (int) (antpat->value.arr->n_elts) );
+n_map = (int) (antpat->value.arr->n_elts / 20 );
+n_rec = (int) ((n_pix - 4) / 5 );
+
+/* Define local variables */
+int d,b,rp,dec_count,idx1,idx2;
+double cnt_dec,dec_offset,loc_y;
+double st_rec,sp_rec;
+
+/* Define constants */
+double degrad=M_PI / 180.0;
+
+/* Load in array data into pointers */
+drift_dec_d = (double *) drift_dec->value.arr->data;
+drift_err_d = (double *) drift_err->value.arr->data;
+drift_ra_rec_d = (double *) drift_ra_rec->value.arr->data;
+antpat_d = (double *) antpat->value.arr->data;
+obs_d = (double *) obs->value.arr->data;
+
+dec_count = 0;
+for(d=0; d<n_drifts; d++) {
+	for(b=0; b<7; b++) {
+		cnt_dec = *(drift_dec_d+dec_count++);
+
+		dec_offset = (cnt_dec - pnt_dec) * 60.0;
+		loc_y = idl_round(dec_offset * 20.0) + (n_map * 10.0);
+		drift_err_d[d*7+b] = (loc_y - (n_map*10.0)) - dec_offset * 20.0;
+
+		if( loc_y >= 0 && loc_y <= (n_pix-1)) {
+			idx1 = 0*7*n_drifts + 7*d + b;
+			idx2 = 1*7*n_drifts + 7*d + b;
+
+			st_rec = idl_round( (drift_ra_rec_d[idx1] - pnt_ra)*1200.0 + n_rec/2);
+			sp_rec = idl_round( (drift_ra_rec_d[idx2] - pnt_ra)*1200.0 + n_rec/2);
+
+			if( st_rec < 0 ) {
+				st_rec = 0;
+			}
+			if( sp_rec > (n_rec-1)) {
+				sp_rec = (n_rec-1);
+			}
+
+			for(rp=st_rec; rp<=st_rec; rp++) {
+				idx1 = (n_rec-1-rp)*7*n_drifts + 7*d + b;
+				obs_d[idx1] = total_beam(antpat_d, b, rp*5, rp*5+4, loc_y, n_pix);
+
+			}
+		}
+	}
+}
+
+return(obs);
+
+}
+
 IDL_VPTR build_beam_worker(int argc, IDL_VPTR argv[]) {
 /* Declare variables from IDL */
 IDL_VPTR drift_dec, drift_err, obs, map;		// For arrays
