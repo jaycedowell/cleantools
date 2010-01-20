@@ -6,6 +6,8 @@
 #endif
 
 int idl_round(double numb) {
+/* Round function like IDL's.  I use this instead of the one
+in math.h to avoid compiler warnings/additional flags. */
 	int result;
 	double remainder;
 
@@ -26,15 +28,15 @@ int idl_round(double numb) {
 	return(result);
 }
 
-double total_beam(double *antpat, int b, int startx, int stopx, int y, int n_pix) {
+double total_beam(float *antpat, int b, int startx, int stopx, int y, int n_pix) {
+/* Function to total a beam stripe between two RA values. */
 	int x;
 	long count;
 	double total = 0.0;
 
-	count = b + 7*startx + 7*n_pix*y;
 	for(x=startx; x<=stopx; x++) {
+		count = b + 7L*x + 7L*n_pix*y;
 		total += *(antpat+count);
-		count += 7;
 	}
 	return(total);
 }
@@ -47,7 +49,8 @@ IDL_VPTR pnt_dec_raw, pnt_ra_raw;		// For scalars
 double pnt_dec, pnt_ra;
 int n_drifts, n_pix, n_map, n_rec;
 double *drift_dec_d, *drift_err_d, *drift_ra_rec_d;
-double *antpat_d, *obs_d;
+double *obs_d;
+float *antpat_d;				// In IDL, ant_pat is a float!
 
 /* Moving arrays to C variables */
 drift_dec    = argv[0];
@@ -76,7 +79,8 @@ IDL_ENSURE_SCALAR(pnt_dec_raw);
 IDL_ENSURE_SIMPLE(pnt_ra_raw);
 IDL_ENSURE_SCALAR(pnt_ra_raw);
 
-/* Move scalars to type and then C variables */
+/* Numeric type checks */
+/** Scalars + Converstion to C variables **/
 if( pnt_dec_raw->type != IDL_TYP_DOUBLE ) {
 	pnt_dec_raw = IDL_CvtDbl(1, &pnt_dec_raw);
 }
@@ -85,6 +89,10 @@ if( pnt_ra_raw->type != IDL_TYP_DOUBLE ) {
 	pnt_ra_raw = IDL_CvtDbl(1, &pnt_ra_raw);
 }
 pnt_ra = (double) pnt_ra_raw->value.d;
+/** Arrays, specifically antpat needs to be a float **/
+if( antpat->type != IDL_TYP_FLOAT) {
+	antpat = IDL_CvtFlt(1, &antpat);
+}
 
 /* Gather together array dimensions */
 n_drifts = (int) (drift_dec->value.arr->n_elts / 7);
@@ -92,10 +100,8 @@ n_pix = (int) sqrt( antpat->value.arr->n_elts / 7 );
 n_map = (int) (n_pix / 20 );
 n_rec = (int) ((n_pix - 4) / 5 );
 
-printf("Drifts: %i\nPix: %i\nMap: %i\nRec: %i\n", n_drifts, n_pix, n_map, n_rec);
-
 /* Define local variables */
-int d,b,rp,dec_count,rec_count,obs_count;
+int d,b,rp,dec_count,rec_count,idx;
 double cnt_dec,dec_offset,loc_y;
 int st_rec,sp_rec;
 
@@ -106,15 +112,13 @@ double degrad=M_PI / 180.0;
 drift_dec_d = (double *) drift_dec->value.arr->data;
 drift_err_d = (double *) drift_err->value.arr->data;
 drift_ra_rec_d = (double *) drift_ra_rec->value.arr->data;
-antpat_d = (double *) antpat->value.arr->data;
+antpat_d = (float *) antpat->value.arr->data;
 obs_d = (double *) obs->value.arr->data;
 
 dec_count = 0;
 rec_count = 0;
-obs_count = 0;
 for(d=0; d<n_drifts; d++) {
 	for(b=0; b<7; b++) {
-		printf("antPat: %g @ %i,%i,%i -> %i\n", *(antpat_d+b+7L*(n_pix/2L)+7L*n_pix*(n_pix/2L)), b, n_pix/2L, n_pix/2L, b+7L*(n_pix/2L)+7L*n_pix*(n_pix/2L));
 		cnt_dec = *(drift_dec_d+dec_count++);
 
 		dec_offset = (pnt_dec - cnt_dec) * 60.0;
@@ -122,6 +126,7 @@ for(d=0; d<n_drifts; d++) {
 		*(drift_err_d+d*7+b) = (loc_y - (n_map*10.0)) - dec_offset * 20.0;
 
 		if( loc_y >= 0 && loc_y <= (n_pix-1)) {
+			idx = 0L + 2*b + 2*7*d;
 			st_rec = idl_round( (*(drift_ra_rec_d+rec_count++) - pnt_ra)*1200.0 + n_rec/2);
 			sp_rec = idl_round( (*(drift_ra_rec_d+rec_count++) - pnt_ra)*1200.0 + n_rec/2);
 
@@ -132,17 +137,25 @@ for(d=0; d<n_drifts; d++) {
 				sp_rec = (n_rec-1);
 			}
 
+			// I don't think there is a slick way to do this
+			idx = (n_rec-1L) + n_rec*b + n_rec*7*d;
 			for(rp=st_rec; rp<=sp_rec; rp++) {
-				*(obs_d+rp+obs_count) = total_beam(antpat_d, b, rp*5, rp*5+4, (int) loc_y, n_pix);
+				*(obs_d+(idx-rp)) = total_beam(antpat_d, b, rp*5, rp*5+4, (int) loc_y, n_pix);
 			}
 		} else {
+			/* Increment rec_count twice to keep out location in 
+			drift_ra_rec_d in sync with the loops. */
 			rec_count++;
 			rec_count++;
 		}
-		obs_count++;
 	}
 }
 
+/* The code that this was meant to replace in build_beam5.pro is
+also responsible for calculating the positional error array (err 
+in build_beam5.pro, drift_err_d here).  However, this function 
+only returns obs.  This will need to be ironed out one day if it 
+is ever used. */
 return(obs);
 
 }

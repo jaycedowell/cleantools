@@ -161,11 +161,8 @@ n_map = floor( (size(AntPat))[2]*0.05 )
 n_rec = floor( ((size(AntPat))[2]-4) / 5 )
 obs = dblarr(n_rec, 7, n_elements(drift_name))
 err = dblarr(n_elements(drift_dec))
-t_idl1 = systime(1)
-print,n_elements(drift_name),n_pix,n_map,n_rec
 for d=0,(n_elements(drift_name)-1) do begin
 	for b=0,6 do begin
-		print,AntPat[b, n_pix/2, n_pix/2],where( AntPat EQ AntPat[b, n_pix/2, n_pix/2])
 		dec_offset = (pnt_dec - drift_dec[b,d]) * 60.0
 		loc_y = round( dec_offset / 0.05 ) + (n_map/2.0/0.05)
 		err[d*7+b] = (loc_y - (n_map/2.0/0.05)) - dec_offset / 0.05
@@ -180,19 +177,16 @@ for d=0,(n_elements(drift_name)-1) do begin
 			obs[(n_rec-1)-r,b,d] = total(AntPat[b, (r*5-0):(r*5+4), loc_y])
 	endfor
 endfor
-t_idl2 = systime(1)
-print,t_idl2-t_idl1
 
-obs_test = dblarr(n_rec, 7, n_elements(drift_name))
-t_idl1 = systime(1)
-obs_test = build_beam_observer(drift_dec, err, pnt_dec, pnt_ra, drift_ra_rec, double(AntPat), obs_test)
-t_idl2 = systime(1)
-print,t_idl2-t_idl1
-
-test_diff = obs - obs_test
-print,'obs:      ',min(obs),mean(obs),median(obs),max(obs)
-print,'obs_test: ',min(obs_test),mean(obs_test),median(obs_test),max(obs_test)
-print,'test_diff:',min(test_diff),mean(test_diff),median(test_diff),max(test_diff)
+; ;+ Place where a C version of the above code an be dropped in. At
+; ;+ the current time, however, there is not pressing reason to use 
+; ;+ it. - JD 01/19/2010
+; obs_test = dblarr(n_rec, 7, n_elements(drift_name))
+; obs_test = build_beam_observer(drift_dec, err, pnt_dec, pnt_ra, drift_ra_rec, AntPat, obs_test)
+; test_diff = obs - obs_test
+; print,'obs:      ',min(obs),mean(obs),median(obs),max(obs)
+; print,'obs_test: ',min(obs_test),mean(obs_test),median(obs_test),max(obs_test)
+; print,'test_diff:',min(test_diff),mean(test_diff),median(test_diff),max(test_diff)
 
 t_obs = systime(1)
 err = err * 0.05 * 60.0
