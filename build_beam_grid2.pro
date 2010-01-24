@@ -49,7 +49,7 @@
 ;               - Updated the internal documentation to explain the various modeling keywords 
 ;                 and the beam replication part
 ;
-pro build_beam_grid2, grid, llx, lly, urx, ury, beams, MapSize=MapSize, FluxCorr=FluxCorr, FWHM=FWHM, PA=PA, Silent=Silent, Output=Output, CExts=CExts, DecOnly=DecOnly, Smart=Smart, SingleBeam=SingleBeam
+pro build_beam_grid2, grid, llx, lly, urx, ury, beams, MapSize=MapSize, FluxCorr=FluxCorr, FWHM=FWHM, PA=PA, Silent=Silent, Output=Output, CExts=CExts, DecOnly=DecOnly, Smart=Smart, SingleBeam=SingleBeam, GALFACorr=GALFACorr
 
 common agcshare
 
@@ -82,16 +82,32 @@ GaussOut = dblarr(urx-llx+1, ury-lly+1, 7)
 t_setup = systime(1)
 
 ; Restore the appropriate beam maps
-case MapSize of 
-	21:	restore,agcdir+'../deconvolution/beams/a1963_21_180.sav'
-	25:	restore,agcdir+'../deconvolution/beams/a1963_25_180.sav'
-	31:	restore,agcdir+'../deconvolution/beams/a1963_31_180.sav'
-	35:	restore,agcdir+'../deconvolution/beams/a1963_35_180.sav'
-	41:	restore,agcdir+'../deconvolution/beams/a1963_41_180.sav'
-	45:	restore,agcdir+'../deconvolution/beams/a1963_45_180.sav'
-	51:	restore,agcdir+'../deconvolution/beams/a1963_51_180.sav'
-	else:	restore,agcdir+'../deconvolution/beams/a1963_25_180.sav'
-endcase
+if Keyword_Set(GALFACorr) then begin
+	if Not Keyword_Set(Silent) then $
+		print,'> using GALFA corrections to beams 1 and 4'
+	Output = [Output, '> using GALFA corrections to beams 1 and 4']
+	case MapSize of 
+		21:	restore,agcdir+'../deconvolution/beams/a1963_galfa_21_180.sav'
+		25:	restore,agcdir+'../deconvolution/beams/a1963_galfa_25_180.sav'
+		31:	restore,agcdir+'../deconvolution/beams/a1963_galfa_31_180.sav'
+		35:	restore,agcdir+'../deconvolution/beams/a1963_galfa_35_180.sav'
+		41:	restore,agcdir+'../deconvolution/beams/a1963_galfa_41_180.sav'
+		45:	restore,agcdir+'../deconvolution/beams/a1963_galfa_45_180.sav'
+		51:	restore,agcdir+'../deconvolution/beams/a1963_galfa_51_180.sav'
+		else:	restore,agcdir+'../deconvolution/beams/a1963_galfa_25_180.sav'
+	endcase
+endif else begin
+	case MapSize of 
+		21:	restore,agcdir+'../deconvolution/beams/a1963_21_180.sav'
+		25:	restore,agcdir+'../deconvolution/beams/a1963_25_180.sav'
+		31:	restore,agcdir+'../deconvolution/beams/a1963_31_180.sav'
+		35:	restore,agcdir+'../deconvolution/beams/a1963_35_180.sav'
+		41:	restore,agcdir+'../deconvolution/beams/a1963_41_180.sav'
+		45:	restore,agcdir+'../deconvolution/beams/a1963_45_180.sav'
+		51:	restore,agcdir+'../deconvolution/beams/a1963_51_180.sav'
+		else:	restore,agcdir+'../deconvolution/beams/a1963_25_180.sav'
+	endcase
+endelse
 
 fitl = MapSize/2 - 6
 fitu = MapSize/2 + 6

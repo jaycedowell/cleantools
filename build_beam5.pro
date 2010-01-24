@@ -64,7 +64,8 @@
 ; 11/18/07 - JD - Added Output flag so that this can work with cleanview.pro (currently
 ;                 called guitest.pro)
 ;
-pro build_beam5, grid, cen, beam, Silent=Silent, Output=Output, MapSize=MapSize, CExts=CExts, AntPat=AntPat
+pro build_beam5, grid, cen, beam, Silent=Silent, Output=Output, MapSize=MapSize, CExts=CExts, AntPat=AntPat, $
+		GALFACorr=GALFACorr
 
 common agcshare
 
@@ -138,16 +139,32 @@ if n_elements(MapSize) EQ 0 then begin
 	MapSize=25
 endif
 if n_elements(AntPat) EQ 0 then begin
-	case MapSize of 
-		21:	restore,agcdir+'../deconvolution/beams/a1963_21_180.sav'
-		25:	restore,agcdir+'../deconvolution/beams/a1963_25_180.sav'
-		31:	restore,agcdir+'../deconvolution/beams/a1963_31_180.sav'
-		35:	restore,agcdir+'../deconvolution/beams/a1963_35_180.sav'
-		41:	restore,agcdir+'../deconvolution/beams/a1963_41_180.sav'
-		45:	restore,agcdir+'../deconvolution/beams/a1963_45_180.sav'
-		51:	restore,agcdir+'../deconvolution/beams/a1963_51_180.sav'
-		else:	restore,agcdir+'../deconvolution/beams/a1963_25_180.sav'
-	endcase
+	if Keyword_Set(GALFACorr) then begin
+		if Not Keyword_Set(Silent) then $
+			print,'> using GALFA corrections to beams 1 and 4'
+		Output = [Output, '> using GALFA corrections to beams 1 and 4']
+		case MapSize of 
+			21:	restore,agcdir+'../deconvolution/beams/a1963_galfa_21_180.sav'
+			25:	restore,agcdir+'../deconvolution/beams/a1963_galfa_25_180.sav'
+			31:	restore,agcdir+'../deconvolution/beams/a1963_galfa_31_180.sav'
+			35:	restore,agcdir+'../deconvolution/beams/a1963_galfa_35_180.sav'
+			41:	restore,agcdir+'../deconvolution/beams/a1963_galfa_41_180.sav'
+			45:	restore,agcdir+'../deconvolution/beams/a1963_galfa_45_180.sav'
+			51:	restore,agcdir+'../deconvolution/beams/a1963_galfa_51_180.sav'
+			else:	restore,agcdir+'../deconvolution/beams/a1963_galfa_25_180.sav'
+		endcase
+	endif else begin
+		case MapSize of 
+			21:	restore,agcdir+'../deconvolution/beams/a1963_21_180.sav'
+			25:	restore,agcdir+'../deconvolution/beams/a1963_25_180.sav'
+			31:	restore,agcdir+'../deconvolution/beams/a1963_31_180.sav'
+			35:	restore,agcdir+'../deconvolution/beams/a1963_35_180.sav'
+			41:	restore,agcdir+'../deconvolution/beams/a1963_41_180.sav'
+			45:	restore,agcdir+'../deconvolution/beams/a1963_45_180.sav'
+			51:	restore,agcdir+'../deconvolution/beams/a1963_51_180.sav'
+			else:	restore,agcdir+'../deconvolution/beams/a1963_25_180.sav'
+		endcase
+	endelse
 
 	AntPat = ant_pat
 endif
