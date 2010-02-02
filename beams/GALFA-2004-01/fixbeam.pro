@@ -99,8 +99,11 @@ galfa *= toScale
 toReplace = where( galfa GT 1.1*a1963, numReplace )
 
 final = a1963
-if toReplace[0] NE -1 then $
+mask = fix(final*0.0)+1
+if toReplace[0] NE -1 then begin
 	final[toReplace] = galfa[toReplace]
+	mask[toReplace] = [0]
+endif
 
 if Keyword_Set(Verbose) then $
 	print,"% "+strtrim(string(numReplace),2)+" pixels replaced ("+ $
@@ -108,8 +111,11 @@ if Keyword_Set(Verbose) then $
 
 if Keyword_Set(Verbose) then begin
 	window,1,XSize=1024,YSize=512,Title='Feed '+strtrim(string(b),2)+': Before and After'
-	tvimage, bytscl(a1963, min=0, max=1e-4), Pos=[0,0,0.5,1]
-	tvimage, bytscl(final, min=0, max=1e-4), Pos=[0.5,0,1,1]
+	tvimage, bytscl(10.0*alog10(a1963/max(a1963)), min=-27.0, max=0.0), Pos=[0,0,0.5,1]
+	tvimage, bytscl(10.0*alog10(final/max(final)), min=-27.0, max=0.0), Pos=[0.5,0,1,1]
+
+	;window,2,XSize=512,YSize=512,Title='Feed '+strtrim(string(b),2)+': Replacement Mask'
+	;tvimage, bytscl(mask), Pos=[0,0,1,1]
 endif
 
 return,final
