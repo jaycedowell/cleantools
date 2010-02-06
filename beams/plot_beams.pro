@@ -31,21 +31,25 @@ if n_elements(PSFileBase) NE 0 then begin
 
 	Scale = 1
 	set_plot,'ps'
-	device, /Encapsulated, filename=file_name, $
+	device, /Encapsulated, filename=file_name, /Color, /CMYK, $
 		XSize=5, YSize=5, /Inches, Bits_Per_Pixel=8
 
-	loadct, 0, /Silent
-	TVLCT, r, g, b, /Get
-	TVLCT, Reverse(r), Reverse(g), Reverse(b)
+	loadct, 39, /Silent
+; 	TVLCT, r, g, b, /Get
+; 	TVLCT, Reverse(r), Reverse(g), Reverse(b)
 endif else begin
 	set_plot,'x'
 	window,0,XSize=200*Scale,YSize=200*Scale
 endelse
 tvimage, 255B-bytscl( congrid(l0, 200*Scale,200*Scale), min=-24, max=0), Pos=[0.00,0.00,1.00,1.00]
-contour, l0, levels=c_levels, c_labels=c_labels, xrange=xrange, yrange=yrange, /NoErase, Pos=[0.00,0.00,1.00,1.00], XStyle=5, YStyle=5, Thick=2.0, CharThick=2.0
+contour, l0, levels=c_levels, c_labels=c_labels, xrange=xrange, yrange=yrange, /NoErase, Pos=[0.00,0.00,1.00,1.00], XStyle=5, YStyle=5, Thick=3.0, CharThick=3.0, CharSize=1.01
 ; xyouts, 0.50, 0.95, 'Beam 0', /Norm, CharThick=2.0, CharSize=1.0, Align=0.5
 plots, [50, 110], [50, 50], Thick=3.0
-xyouts, 80, 60, '3''', /Data, CharThick=2.0, CharSize=1.0, Align=0.5
+xyouts, 80, 60, '3''', /Data, CharThick=3.0, CharSize=1.01, Align=0.5
+
+colorbar, Range=[0.0, -24.0], Pos=[0.70, 0.07, 0.93, 0.12], Divisions=4, $
+	Title='Sensitivity [dB]', $
+	Thick=3.0, CharThick=3.0, CharSize=0.75
 
 
 if n_elements(PSFileBase) NE 0 then begin
@@ -54,7 +58,7 @@ if n_elements(PSFileBase) NE 0 then begin
 	file_name = PSFileBase+'-beam123456.eps'
 
 	Scale = 1
-	device, /Encapsulated, filename=file_name, $
+	device, /Encapsulated, filename=file_name, /Color, /CMYK, $
 		XSize=9, YSize=6, /Inches, Bits_Per_Pixel=8
 endif else begin
 	window,1,XSize=600*Scale,YSize=400*Scale
@@ -67,26 +71,31 @@ tvimage, 255B-bytscl( congrid(l3, 200*Scale,200*Scale), min=-24, max=0), Pos=[0.
 tvimage, 255B-bytscl( congrid(l4, 200*Scale,200*Scale), min=-24, max=0), Pos=[0.33,0.00,0.67,0.50]
 tvimage, 255B-bytscl( congrid(l5, 200*Scale,200*Scale), min=-24, max=0), Pos=[0.67,0.00,1.00,0.50]
 
-contour, l2, levels=c_levels, c_labels=c_labels, xrange=xrange, yrange=yrange, /NoErase, Pos=[0.00,0.50,0.33,1.00], XStyle=5, YStyle=5, Thick=2.0, CharThick=2.0
-contour, l1, levels=c_levels, c_labels=c_labels, xrange=xrange, yrange=yrange, /NoErase, Pos=[0.33,0.50,0.67,1.00], XStyle=5, YStyle=5, Thick=2.0, CharThick=2.0
+contour, l2, levels=c_levels, c_labels=c_labels, xrange=xrange, yrange=yrange, /NoErase, Pos=[0.00,0.50,0.33,1.00], XStyle=5, YStyle=5, Thick=3.0, CharThick=3.0, CharSize=1.01
+contour, l1, levels=c_levels, c_labels=c_labels, xrange=xrange, yrange=yrange, /NoErase, Pos=[0.33,0.50,0.67,1.00], XStyle=5, YStyle=5, Thick=3.0, CharThick=3.0, CharSize=1.01
 
-xs = xrange[1]/2
+xs = xrange[0] - xrange[1]/100
 plots, [xs-40, xs+40], [-5, -5], Thick=3.0
-xyouts, xs, 5, '4''', /Data, CharThick=2.0, CharSize=1.0, Align=0.5
+xyouts, xs, 5, '4''', /Data, CharThick=3.0, CharSize=1.0, Align=0.5
 
-contour, l6, levels=c_levels, c_labels=c_labels, xrange=xrange, yrange=yrange, /NoErase, Pos=[0.67,0.50,1.00,1.00], XStyle=5, YStyle=5, Thick=2.0, CharThick=2.0
+polyfill, [0.59, 0.74, 0.74, 0.59, 0.59], [0.44, 0.44, 0.56, 0.56, 0.44], /Norm, Color=255B
+colorbar, Range=[0.0, -24.0], Pos=[0.602, 0.48, 0.732, 0.52], Divisions=4, $
+	Title='Sensitivity [dB]', $
+	Thick=3.0, CharThick=3.0, CharSize=0.75
 
-contour, l3, levels=c_levels, c_labels=c_labels, xrange=xrange, yrange=yrange, /NoErase, Pos=[0.00,0.00,0.33,0.50], XStyle=5, YStyle=5, Thick=2.0, CharThick=2.0
-contour, l4, levels=c_levels, c_labels=c_labels, xrange=xrange, yrange=yrange, /NoErase, Pos=[0.33,0.00,0.67,0.50], XStyle=5, YStyle=5, Thick=2.0, CharThick=2.0
-contour, l5, levels=c_levels, c_labels=c_labels, xrange=xrange, yrange=yrange, /NoErase, Pos=[0.67,0.00,1.00,0.50], XStyle=5, YStyle=5, Thick=2.0, CharThick=2.0
+contour, l6, levels=c_levels, c_labels=c_labels, xrange=xrange, yrange=yrange, /NoErase, Pos=[0.67,0.50,1.00,1.00], XStyle=5, YStyle=5, Thick=3.0, CharThick=3.0, CharSize=1.01
 
-xyouts, 0.17, 0.95, 'Beam 2', /Norm, CharThick=2.0, CharSize=1.0, Align=0.5
-xyouts, 0.50, 0.95, 'Beam 1', /Norm, CharThick=2.0, CharSize=1.0, Align=0.5
-xyouts, 0.83, 0.95, 'Beam 6', /Norm, CharThick=2.0, CharSize=1.0, Align=0.5
+contour, l3, levels=c_levels, c_labels=c_labels, xrange=xrange, yrange=yrange, /NoErase, Pos=[0.00,0.00,0.33,0.50], XStyle=5, YStyle=5, Thick=3.0, CharThick=3.0, CharSize=1.01
+contour, l4, levels=c_levels, c_labels=c_labels, xrange=xrange, yrange=yrange, /NoErase, Pos=[0.33,0.00,0.67,0.50], XStyle=5, YStyle=5, Thick=3.0, CharThick=3.0, CharSize=1.01
+contour, l5, levels=c_levels, c_labels=c_labels, xrange=xrange, yrange=yrange, /NoErase, Pos=[0.67,0.00,1.00,0.50], XStyle=5, YStyle=5, Thick=3.0, CharThick=3.0, CharSize=1.01
 
-xyouts, 0.17, 0.05, 'Beam 3', /Norm, CharThick=2.0, CharSize=1.0, Align=0.5
-xyouts, 0.50, 0.05, 'Beam 4', /Norm, CharThick=2.0, CharSize=1.0, Align=0.5
-xyouts, 0.83, 0.05, 'Beam 5', /Norm, CharThick=2.0, CharSize=1.0, Align=0.5
+xyouts, 0.17, 0.95, 'Beam 2', /Norm, CharThick=3.0, CharSize=1.01, Align=0.5
+xyouts, 0.50, 0.95, 'Beam 1', /Norm, CharThick=3.0, CharSize=1.01, Align=0.5
+xyouts, 0.83, 0.95, 'Beam 6', /Norm, CharThick=3.0, CharSize=1.01, Align=0.5
+
+xyouts, 0.17, 0.05, 'Beam 3', /Norm, CharThick=3.0, CharSize=1.01, Align=0.5
+xyouts, 0.50, 0.05, 'Beam 4', /Norm, CharThick=3.0, CharSize=1.01, Align=0.5
+xyouts, 0.83, 0.05, 'Beam 5', /Norm, CharThick=3.0, CharSize=1.01, Align=0.5
 
 if n_elements(PSFileBase) NE 0 then begin
 	device, /close
