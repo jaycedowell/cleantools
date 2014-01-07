@@ -199,11 +199,11 @@ AC_ARG_WITH([idl-inc],
         [
 	 AC_PATH_HEADER([IDL_HEADER], [idl_export.h], 
 		[AC_MSG_ERROR([cannot find idl_export.h; try --with-idl-inc=PATH])], 
-		["$withval":"/usr/local/itt/idl/external/include":"/usr/local/rsi/idl/external/include"])], 
+		["$withval":"/usr/local/exelis/idl/external/include":"/usr/local/itt/idl/external/include":"/usr/local/rsi/idl/external/include"])], 
 	[
 	 AC_PATH_HEADER([IDL_HEADER], [idl_export.h], 
 		[AC_MSG_ERROR([cannot find idl_export.h; try --with-idl-inc=PATH])], 
-		["/usr/local/itt/idl/external/include":"/usr/local/rsi/idl/external/include"])])
+		["/usr/local/exelis/idl/external/include":"/usr/local/itt/idl/external/include":"/usr/local/rsi/idl/external/include"])])
 
 # Checks for typedefs, structures, and compiler characteristics.
 ## Check for 64-bit or 32-bit IDL installation to determine if we need 
