@@ -111,6 +111,7 @@ Brief Description of the CLEAN log format
 -----------------------------------------
 The most important sections of this log for determining the quality of the cleaning are in the format of:
 
+```
 ...
 >  Channel  378   
 >  exiting on flux limit   
@@ -118,6 +119,7 @@ The most important sections of this log for determining the quality of the clean
 >   peak at loop exit 16.411306 mJy   
 >   residual RMS is 2.5879821 mJy
 ...
+```
 
 The first line gives the channel (or pseudo-channel if CLEANVIEW is configured to with the "Combine to improve S/N?" option 
 is set to yes) number.  The second contains what condition caused the cleaning loop to exit on that channel (flux or iteration 
@@ -126,3 +128,133 @@ thresholds set by FLUX_LIMIT and SIGMA_list, this value is zero.  The fourth lin
 cleaned.  These two lines are particularly useful in determining to what depth each channel should be cleaned.  The final 
 line gives the RMS of the remaining (un-cleaned) component of the channel.  For a well cleaned channel, this value should 
 be comparable to the value stored in ROBUST_RMS.
+
+Known Issues and Limitations of GRIDVIEW2
+-----------------------------------------
+Know Issues:
+
+  * There are currently no known issues with this routine.
+
+Limitations:
+
+  * There are currently no limitations, relative to GRIDVIEW, with this routine.
+
+
+The Beam Building Process, Known Issues, and Limitations of CLEANVIEW
+---------------------------------------------------------------------
+The Beam Building Process:
+
+Although the effective beam pattern is position-dependent, CLEANVIEW uses a variety of approximations to reduce the 
+computational load associated with generating a beam pattern for each pixel that needs to be cleaned.  These approximations are 
+based on the fact that beam changes shape faster in dec. than it does in RA.  This allows CLEANVIEW to take a "smart" approach 
+to modeling the beams.  First, beams for the entire dec. range are created for the RA value that lies at the center of the region 
+to be cleaned.  Next, the weight map for the regions is examined to find pixels where the weight changes relative to the central 
+strip of beams.  For each pixel where the changes is ≥10%, a new beam is computed.  Finally, the remaining area of the grid is 
+filled in by copying the computed beams to areas that do not have a beam.  The copying is carried out from east to west.  
+
+Know Issues:
+
+  * There is an issue with the coordinate system the cursor sees when switching between CLEANVIEW and BEAMVIEW/VELOCITY FIELDVIEW.  
+    This causes the coordinate system in the channel map window to be reset and the Image Info panel to not update.  To fix this, 
+    simply left click once on the channel map window.  This will reset the coordinates and start the Image Info panel updating.
+  * Altering the scaling/colorbar options before deconvolution causes CLEANVIEW to crash.  This problem happens because the arrays 
+    that hold the cleaned map are initialized to zero at the start of CLEANVIEW.  Typing “retall” at the IDL command prompt should 
+    clear this up.  
+  
+Limitations:
+
+  * Not all of the catalogs listed in GRIDVIEW2 are currently available in CLEANVIEW.  The catalogs that are missing are 
+    Multi-AGC and NVSS.
+  * There is currently no option that allows you to jump to a specific channel.  The only way to move between channels is 
+    by moving the channel slider.  
+  * When using logarithmic or histogram equalization scaling, the colorbar is forced to automatic scaling.  Linear scaling is 
+    currently the only option that supports constant (-5 to 10 mJy/beam) scaling.
+  * The grid RMS computed and displayed by CLEANVIEW is not a rigourous RMS.  Rather it is the RMS associated with ~1,000,000 
+    pixels (~1/16th of the total pixels) from the grid.d structure.  This method is used because it is much faster and less
+    memory intensive than using the full grid.d array.  The two values are also in good agreement with each other, with a 
+    difference less than 0.01 mJy/beam.
+  * The file format saved using "File->Save Data" is currently only documented in the file data_structures.md file.
+  * When the "Combine to Improve S/N?" option is selected, there may be an issue with using a channel range that specifies a 
+    prime number of channels.  This is due to the way that channels are combined in only integer multiples.  Care should be 
+    taken not to specify a channel range that has a prime number of channels.  Channel ranges that are multiples of two are 
+    best.  For an alternative description of this particular limitation, see the backend_guide.md file.
+
+
+BEAMVIEW
+--------
+Overiew:
+
+BEAMVIEW is a utility for displaying the effective beam patterns computed by build_beam5 for the deconvolution.  The five main 
+parts to this routine are:  the "Effective Beam Pattern" plot window, the "Unique Beam Regions" plot window, the "Detail" panel, 
+the “Properties” panel, and the “Beam Modeling Log” panel.  The Detail panel gives information about the beam strength located 
+under the current cursor position on the Effective Beam Pattern plot window while the Properties panel gives details about the 
+beam as a whole.  This includes the location (RA/dec and pixel coordinates on the grid displayed in GRIDVIEW2), the fitted FWHP 
+of the beam, and the position angle of the beam in degrees East of North.  The Unique Beam Regions plot window displays the area 
+to be cleaned and plots each unique beam as a different color.  Clicking on this window updates the Effective Beam Pattern window 
+with the beam used at that point.  The Beam Modeling Log panel shows the logs generated when the beams were modeled.  This 
+information includes how many drifts were used to create the model, if the clean_tools.so library was used for the computations, 
+the position error incurred by modeling the drifts on a discrete grid, and the total time required to model the beams.  
+
+The BEAMVIEW menu bar as a variety of options for displaying and saving the beam pattern.  Under the "File" menu there is an 
+option to export the central beam as a JPEG.  Under the "Color" menu, different color maps can be chosen along with the option 
+to invert the colors.  The default is a rainbow+white color map.  The "Scaling" menu has options to change the stretch displayed
+from linear to logarithmic and vice versa.
+
+Know Issues:
+
+  * It should be noted that after BEAMVIEW has been closed, it may be necessary to click the map window in CLEANVIEW to 
+    re-initialize its coordinate system.  Otherwise, the Image Info panel will not update properly.
+
+
+VELOCITY FIELDVIEW
+------------------
+Overview:
+
+VELOCITY FIELDVIEW is a utility for creating a rough velocity field of an object.  It is invoked using the "Velocity Field"  
+button in CLEANVIEW and drawing a box around the region to examine.  The main parts of this routine are:
+  1) Menus:  VELOCITY FIELDVIEW has a variety of menu options for controlling the creation of the velocity field.  
+       * "Color" is similar to the color menu in BEAMVIEW and allows for the color velocity field map to be changed.
+       * "Contours" controls how many and of what type of contours are displayed.  By default it selects 10 contour 
+         levels and overplots white lines at the boundaries of the contours.  The overplotting is changed by using the 
+	 "Overplot Contours" option.
+       * "Clipping" tells the routine which column density values should be displayed in the field map.  The default is 
+         10^19 atoms/cm^2.
+
+  2) Spectrum:  The spectrum consists of the upper three panels in VELOCITY FIELDVIEW.  The uppermost panel deals with adjusting 
+     the scale displayed in the spectrum window.  This, combined with the right-click zoom, is useful for centering up on a 
+     particular feature and adjusting the display range.  To apply the new range, simplify click "Rescale".
+     
+     The next lower panel displays the the spectrum of the center pixel of the source box.  This spectrum can be interacted with 
+     using the left, middle, and right mouse buttons.  The left button is used in a manner similar to GALFLUX/CLEANFLUX to select 
+     the region of interest in the spectrum.  The middle button resets the spectrum to its original size and clears all channel 
+     markers.  The right button allows for zooming in.
+
+    Below the spectrum is a panel that displays information about the cursors current location.  
+
+  3) Buttons:  There are two buttons located at the bottom of the window, "Reset" and "Compute".  
+       * "Reset" resets the spectrum window to display all channels at a flux density range of -10 to 30 mJy/beam.  It also 
+         erases the velocity field map window. 
+       * "Compute" is used to generate the velocity field map after the upper and lower channel ranges have been selected in 
+         the spectrum window using the left mouse button.  
+
+Usage:
+
+Specifying the channel range to use in VELOCITY FIELDVIEW is similar to that in GALFLUX/CLEANFLUX;  you use the left mouse button
+to define the range, and the right mouse button to zoom in.  Once the range has been picked, you need to click on Compute to 
+generate and display the map.  If you need to redo your channel range selection you can either left click a third time to clear 
+the marks (this maintains the current zoom), middle click to clear the marks and reset the view window, or click.
+
+Once a map has been computed, the color, number and type of contours, and clipping levels can to altered to change the display.  
+These options are accessible from the menu bar.  It is also possible to save a JPEG version of the velocity field map.
+
+Know Issues:
+
+  * When VELOCITY FIELDVIEW is first started, the coordinate system for the spectrum is not initialized, i.e., the cursor info 
+    will not update.  To fix this,  simply click once on the spectrum window.  This should bring up the dashed cross-hairs and 
+    begin updating the cursor info.  This is sometimes necessary after computing the field map as well.
+  * If "Compute" is clicked before the spectral range is defined, the routine will crash.  To recover from this, type 'retall' at 
+    the IDL command prompt.
+  * Sometimes when changing clipping levels, the previous velocity field map will not be erased and the new map will be simply 
+    overplotted.
+  * It may be necessary to click the map window in CLEANVIEW to re-initialize its coordinate system after VELOCITY FIELDVIEW has 
+    been exited.  Otherwise, CLEANVIEW's Image Info panel will not update properly.
